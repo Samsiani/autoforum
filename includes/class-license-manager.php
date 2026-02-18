@@ -227,7 +227,16 @@ class License_Manager {
             wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'autoforum' ) ], 401 );
         }
 
-        $user_id    = get_current_user_id();
+        $user_id  = get_current_user_id();
+        $rate_key = Utils::rate_limit_key( 'hwid_reset_u' . $user_id );
+        if ( Utils::is_rate_limited( $rate_key, 5, HOUR_IN_SECONDS ) ) {
+            wp_send_json_error( [
+                'message' => __( 'Too many HWID reset attempts. Please try again later.', 'autoforum' ),
+                'code'    => 'rate_limited',
+            ], 429 );
+        }
+        Utils::increment_rate_limit( $rate_key, HOUR_IN_SECONDS );
+
         $license_id = absint( $_POST['license_id'] ?? 0 );
 
         if ( ! $license_id ) {

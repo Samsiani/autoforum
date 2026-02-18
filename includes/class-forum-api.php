@@ -23,11 +23,16 @@ defined( 'ABSPATH' ) || exit;
 
 class Forum_API {
 
-    private const NONCE_TOPIC   = 'af_create_topic';
-    private const NONCE_POST    = 'af_create_post';
-    private const NONCE_THANK   = 'af_thank_post';
-    private const NONCE_VIEW    = 'af_view_topic';
-    private const NONCE_SEARCH  = 'af_search';
+    private const NONCE_TOPIC        = 'af_create_topic';
+    private const NONCE_POST         = 'af_create_post';
+    private const NONCE_THANK        = 'af_thank_post';
+    private const NONCE_VIEW         = 'af_view_topic';
+    private const NONCE_SEARCH       = 'af_search';
+    private const NONCE_CATEGORIES   = 'af_get_categories';
+    private const NONCE_TOPICS       = 'af_get_topics';
+    private const NONCE_POSTS        = 'af_get_posts';
+    private const NONCE_HOME_STATS   = 'af_get_home_stats';
+    private const NONCE_USER_PROFILE = 'af_get_user_profile';
     private const ALLOWED_TAGS  = [
         'p'          => [],
         'br'         => [],
@@ -51,7 +56,6 @@ class Forum_API {
         'h4'         => [],
     ];
 
-    private const TOPIC_STATUSES  = [ 'open', 'closed', 'pinned', 'archived' ];
     private const SORT_MAP        = [
         'latest'  => 'last_replied',
         'oldest'  => 'created_at',
@@ -94,6 +98,8 @@ class Forum_API {
     // ── Read: Categories ─────────────────────────────────────────────────────
 
     public function ajax_get_categories(): void {
+        check_ajax_referer( self::NONCE_CATEGORIES, 'nonce' );
+
         $cache_key = 'af_all_categories';
         $rows      = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
@@ -114,6 +120,8 @@ class Forum_API {
     // ── Read: Topics list (with pagination + sort) ────────────────────────────
 
     public function ajax_get_topics(): void {
+        check_ajax_referer( self::NONCE_TOPICS, 'nonce' );
+
         global $wpdb;
 
         $cat_id   = absint( $_POST['category_id'] ?? 0 );
@@ -178,6 +186,8 @@ class Forum_API {
     // ── Read: Posts inside a topic ────────────────────────────────────────────
 
     public function ajax_get_posts(): void {
+        check_ajax_referer( self::NONCE_POSTS, 'nonce' );
+
         global $wpdb;
 
         $topic_id = absint( $_POST['topic_id'] ?? 0 );
@@ -298,6 +308,8 @@ class Forum_API {
     // ── Read: Search ──────────────────────────────────────────────────────────
 
     public function ajax_search(): void {
+        check_ajax_referer( self::NONCE_SEARCH, 'nonce' );
+
         global $wpdb;
 
         $q = sanitize_text_field( wp_unslash( $_POST['q'] ?? '' ) );
@@ -347,6 +359,8 @@ class Forum_API {
     // ── Write: View counter ───────────────────────────────────────────────────
 
     public function ajax_view_topic(): void {
+        check_ajax_referer( self::NONCE_VIEW, 'nonce' );
+
         global $wpdb;
 
         $topic_id = absint( $_POST['topic_id'] ?? 0 );
@@ -1019,6 +1033,8 @@ class Forum_API {
     // ── Read: Home page stats (members, posts, threads, online, top contributors, latest posts) ──
 
     public function ajax_get_home_stats(): void {
+        check_ajax_referer( self::NONCE_HOME_STATS, 'nonce' );
+
         global $wpdb;
 
         $topics_table = DB_Installer::topics_table();
@@ -1102,6 +1118,8 @@ class Forum_API {
     // ── Read: Public user profile ─────────────────────────────────────────────
 
     public function ajax_get_user_profile(): void {
+        check_ajax_referer( self::NONCE_USER_PROFILE, 'nonce' );
+
         $user_id = absint( $_POST['user_id'] ?? 0 );
         if ( ! $user_id ) {
             wp_send_json_error( [ 'message' => __( 'User ID required.', 'autoforum' ) ] );

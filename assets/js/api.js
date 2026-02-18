@@ -159,11 +159,12 @@ const API = ( () => {
     // ── Forum: Read ────────────────────────────────────────────────────────────
 
     async function getCategories() {
-        return _ajax( 'af_get_categories' );
+        return _ajax( 'af_get_categories', { nonce: _nonce( 'getCategories' ) } );
     }
 
     async function getTopics( { categoryId = 0, page = 1, sort = 'latest' } = {} ) {
         return _ajax( 'af_get_topics', {
+            nonce:       _nonce( 'getTopics' ),
             category_id: categoryId,
             page,
             sort,
@@ -171,7 +172,7 @@ const API = ( () => {
     }
 
     async function getPosts( { topicId, page = 1 } ) {
-        return _ajax( 'af_get_posts', { topic_id: topicId, page } );
+        return _ajax( 'af_get_posts', { nonce: _nonce( 'getPosts' ), topic_id: topicId, page } );
     }
 
     async function search( query ) {
@@ -182,7 +183,7 @@ const API = ( () => {
 
     async function viewTopic( topicId ) {
         // Fire-and-forget — we don't await this in views.
-        return _ajax( 'af_view_topic', { topic_id: topicId } );
+        return _ajax( 'af_view_topic', { nonce: _nonce( 'viewTopic' ), topic_id: topicId } );
     }
 
     async function createTopic( { categoryId, title, prefix, content, locked = false, lockContent = false } ) {
@@ -282,7 +283,7 @@ const API = ( () => {
     }
 
     async function getHomeStats() {
-        return _ajax( 'af_get_home_stats', {} );
+        return _ajax( 'af_get_home_stats', { nonce: _nonce( 'getHomeStats' ) } );
     }
 
     function pingActive() {
@@ -290,7 +291,7 @@ const API = ( () => {
     }
 
     async function getUserProfile( userId ) {
-        return _ajax( 'af_get_user_profile', { user_id: userId } );
+        return _ajax( 'af_get_user_profile', { nonce: _nonce( 'getUserProfile' ), user_id: userId } );
     }
 
     // ── Public API ─────────────────────────────────────────────────────────

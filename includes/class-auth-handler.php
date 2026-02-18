@@ -144,7 +144,7 @@ class Auth_Handler {
         Utils::increment_rate_limit( $reg_key, self::REGISTER_LOCKOUT_SECS );
 
         // Fire WP new user notification (sends admin/user emails).
-        wp_new_user_notification( $user_id, null, 'both' );
+        wp_new_user_notification( $user_id, null, 'admin' );
 
         do_action( 'af_user_registered', $user_id );
 
