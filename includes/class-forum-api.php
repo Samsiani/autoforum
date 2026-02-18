@@ -884,7 +884,7 @@ class Forum_API {
      *
      * Security chain:
      *  1. Nonce + login check.
-     *  2. current_user_can('upload_files') — same cap WordPress uses.
+     *  2. current_user_can('read') — all registered forum members can upload.
      *  3. MIME type is detected server-side via wp_check_filetype_and_ext().
      *  4. wp_handle_upload() applies WordPress's own security layer.
      *  5. Result is recorded in af_attachments (not wp_posts).
@@ -893,7 +893,7 @@ class Forum_API {
         check_ajax_referer( 'af_upload_attachment', 'nonce' );
         $this->require_login();
 
-        if ( ! current_user_can( 'upload_files' ) ) {
+        if ( ! current_user_can( 'read' ) ) {
             wp_send_json_error( [ 'message' => __( 'You do not have permission to upload files.', 'autoforum' ) ], 403 );
         }
 
