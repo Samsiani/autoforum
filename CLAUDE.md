@@ -136,3 +136,5 @@ Use `Modal.showAuthTab('register')` instead of calling `Modal.show()` followed b
 
 ### Server-authoritative content gating
 Never persist unlock state in `state.js`. After a successful unlock API call, re-render the view — the server response determines what is visible.
+
+<!-- test: release workflow v1.0.1 -->
