@@ -1,0 +1,518 @@
+/*
+ * AutoForum — Admin Styles
+ * Scoped to WP admin pages only (loaded only on af_ admin hooks).
+ */
+
+/* ── Wrap ─────────────────────────────────────────────────────────────────── */
+.af-admin-wrap {
+    max-width: 1200px;
+}
+
+.af-admin-wrap h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.6rem;
+    margin-bottom: 24px;
+}
+
+/* ── Cards / sections ────────────────────────────────────────────────────── */
+.af-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.af-card h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+
+/* ── License table ───────────────────────────────────────────────────────── */
+.af-license-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.af-license-table th,
+.af-license-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.af-license-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #444;
+    border-top: 1px solid #e0e0e0;
+}
+
+.af-license-table tr:hover td {
+    background: #fafafa;
+}
+
+.af-license-table code {
+    background: #f1f1f1;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    letter-spacing: .5px;
+    word-break: break-all;
+}
+
+/* ── Status badges ───────────────────────────────────────────────────────── */
+.af-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.af-badge-active  { background: #d1fae5; color: #065f46; }
+.af-badge-warn    { background: #fef3c7; color: #92400e; }
+.af-badge-danger  { background: #fee2e2; color: #991b1b; }
+.af-badge-muted   { background: #f3f4f6; color: #6b7280; }
+
+/* ── Action buttons in table ─────────────────────────────────────────────── */
+.af-btn-sm {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-weight: 500;
+    line-height: 1.5;
+    text-decoration: none;
+    transition: opacity .15s;
+}
+.af-btn-sm:hover { opacity: .85; }
+
+.af-btn-reset  { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+.af-btn-revoke { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+
+/* ── Spinner (AJAX indicator) ────────────────────────────────────────────── */
+.af-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0,0,0,.2);
+    border-top-color: #1d2327;
+    border-radius: 50%;
+    animation: af-spin .6s linear infinite;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+@keyframes af-spin { to { transform: rotate(360deg); } }
+
+/* ── Search bar ──────────────────────────────────────────────────────────── */
+.af-search-wrap {
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.af-search-wrap input[type="search"] {
+    flex: 1;
+    max-width: 360px;
+}
+
+/* ── Color picker swatch ─────────────────────────────────────────────────── */
+.af-color-preview {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    vertical-align: middle;
+    margin-left: 8px;
+    transition: background .2s;
+}
+
+/* ── Notice (inline) ─────────────────────────────────────────────────────── */
+.af-notice-inline {
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 4px;
+    margin-top: 8px;
+    display: none;
+}
+.af-notice-inline.success { background: #d1fae5; color: #065f46; display: block; }
+.af-notice-inline.error   { background: #fee2e2; color: #991b1b; display: block; }
+
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.af-pagination {
+    margin-top: 16px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.af-pagination a,
+.af-pagination span {
+    padding: 4px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    text-decoration: none;
+    color: #1d2327;
+}
+
+.af-pagination a:hover     { background: #f0f0f0; }
+.af-pagination .current    { background: #2271b1; color: #fff; border-color: #2271b1; }
+
+/* ── Icon Picker ──────────────────────────────────────────────────────────────────── */
+.af-icon-td {
+    position: relative;
+}
+
+.af-icon-picker-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 220px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #8c8f94 !important;
+    border-radius: 4px;
+    background: #fff !important;
+    cursor: pointer;
+    font-size: 13px;
+    color: #1d2327;
+    vertical-align: middle;
+}
+.af-icon-picker-btn:hover,
+.af-icon-picker-btn.open { border-color: #2271b1 !important; }
+
+.af-icon-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    font-size: 15px;
+    color: #2271b1;
+    flex-shrink: 0;
+}
+
+/* Inline expandable panel */
+.af-icon-panel {
+    margin-top: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,.10);
+    overflow: hidden;
+    width: 100%;
+    max-width: 640px;
+}
+
+.af-icon-panel-search {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    background: #fafafa;
+}
+.af-icon-panel-search input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+.af-icon-panel-search input:focus {
+    border-color: #2271b1;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(34,113,177,.2);
+}
+
+.af-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 4px;
+    padding: 12px;
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.af-icon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 10px 4px 7px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: background .1s, border-color .1s;
+    font-size: 11px;
+    color: #555;
+    word-break: break-all;
+    text-align: center;
+    line-height: 1.2;
+}
+.af-icon-item i    { font-size: 20px; color: #2c3338; }
+.af-icon-item:hover { background: #f0f6fc; border-color: #72aee6; }
+.af-icon-item.selected { background: #dbeafe; border-color: #2271b1; }
+.af-icon-item.selected i { color: #2271b1; }
+
+.af-icon-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+    font-size: 13px;
+}
+.af-icon-picker-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 220px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    color: #1d2327;
+}
+.af-icon-picker-btn:hover { border-color: #2271b1; }
+
+.af-icon-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    font-size: 15px;
+    color: #2271b1;
+}
+
+/* Backdrop */
+.af-icon-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 99998;
+}
+
+/* Modal */
+.af-icon-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 99999;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.25);
+    width: 580px;
+    max-width: 96vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.af-icon-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid #ddd;
+    font-size: 15px;
+}
+
+.af-icon-modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    padding: 0 4px;
+}
+.af-icon-modal-close:hover { color: #c0392b; }
+
+.af-icon-modal-search {
+    padding: 10px 18px;
+    border-bottom: 1px solid #eee;
+}
+.af-icon-modal-search input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+.af-icon-modal-search input:focus { border-color: #2271b1; outline: none; box-shadow: 0 0 0 2px rgba(34,113,177,.2); }
+
+.af-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 4px;
+    padding: 14px 18px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.af-icon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 4px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: background .12s, border-color .12s;
+    font-size: 11px;
+    color: #555;
+    word-break: break-all;
+    text-align: center;
+    line-height: 1.2;
+}
+.af-icon-item i    { font-size: 20px; color: #1d2327; }
+.af-icon-item:hover { background: #f0f6fc; border-color: #2271b1; }
+.af-icon-item.selected { background: #e8f0fe; border-color: #2271b1; }
+.af-icon-item.selected i { color: #2271b1; }
+
+.af-icon-modal-foot {
+    padding: 10px 18px;
+    border-top: 1px solid #eee;
+    text-align: right;
+}
+
+.af-icon-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+    font-size: 13px;
+}
+
+/* ════════════════════════════════════
+   TOGGLE SWITCH  (.af-toggle)
+════════════════════════════════════ */
+.af-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.af-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.af-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #c3c4c7;
+    border-radius: 24px;
+    transition: background 0.25s;
+}
+
+.af-toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    transition: transform 0.25s;
+}
+
+.af-toggle input:checked + .af-toggle-slider {
+    background: #2271b1;
+}
+
+.af-toggle input:focus-visible + .af-toggle-slider {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+.af-toggle input:checked + .af-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+/* ════════════════════════════════════
+   TICKER ADMIN — ITEMS LIST
+════════════════════════════════════ */
+.af-ticker-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.af-ticker-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: default;
+}
+
+.af-ticker-row.af-drag-over {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.af-drag-handle {
+    cursor: grab;
+    color: #aaa;
+    font-size: 14px;
+    padding: 0 4px;
+    user-select: none;
+}
+
+.af-drag-handle:active { cursor: grabbing; }
+
+.af-ticker-icon-preview {
+    font-size: 16px;
+    width: 22px;
+    text-align: center;
+    color: #2271b1;
+    flex-shrink: 0;
+}
+
+.af-ticker-row input[type="text"] {
+    flex: 1;
+    min-width: 0;
+}
+
+.af-ticker-row .button-link-delete {
+    color: #d63638;
+    font-size: 12px;
+    white-space: nowrap;
+    text-decoration: none;
+    padding: 0 4px;
+}
+
+.af-ticker-row .button-link-delete:hover { color: #b02020; }
