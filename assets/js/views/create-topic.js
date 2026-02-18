@@ -353,7 +353,7 @@ const CreateTopicView = {
                     this.attachments = [];
                 }
 
-                Toast.success('Topic posted successfully! 🎉');
+                Toast.success('Topic posted successfully!');
                 Router.navigateTo('thread-view', { id: data.topic_id });
             } catch (err) {
                 Toast.error(err.message ?? 'Failed to post topic. Please try again.');
