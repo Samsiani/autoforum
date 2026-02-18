@@ -3,7 +3,7 @@
  * Plugin Name:       AutoForum & License Manager
  * Plugin URI:        https://esytuner.com/autoforum
  * Description:       High-performance automotive forum with built-in license & HWID management, WooCommerce integration, and "unlock via thanks" content gating.
- * Version:           ..1
+ * Version:           1.0.1
  * Author:            EsyTuner Dev Team
  * Author URI:        https://esytuner.com
  * License:           GPL-2.0-or-later
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit; // Prevent direct file access.
 // CONSTANTS
 // ──────────────────────────────────────────────────────────────────────────────
 
-define( 'AF_VERSION', '..1' );
+define( 'AF_VERSION', '1.0.1' );
 define( 'AF_PLUGIN_FILE', __FILE__ );
 define( 'AF_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'AF_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );

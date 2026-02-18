@@ -35,7 +35,8 @@ jobs:
       - name: Read current version
         id: current
         run: |
-          VERSION=$(grep -oP '(?<= \* Version:\s{1,20})\d+\.\d+\.\d+' autoforum-core.php | head -1)
+          # Use awk for portable extraction — no PCRE lookbehind needed.
+          VERSION=$(awk '/^\s+\*\s+Version:/{print $NF; exit}' autoforum-core.php)
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Current version: ${VERSION}"
 
@@ -49,11 +50,11 @@ jobs:
           echo "version=${NEW}" >> "$GITHUB_OUTPUT"
           echo "New version: ${NEW}"
 
-          # Update the plugin header comment line.
-          sed -i "s/ \* Version:.*$/ * Version:           ${NEW}/" autoforum-core.php
+          # Update the plugin header comment — replace everything after "Version:" whitespace.
+          sed -i -E "s/^( \* Version:[[:space:]]+).+$/\1${NEW}/" autoforum-core.php
 
           # Update the AF_VERSION constant.
-          sed -i "s/define( 'AF_VERSION',[^)]*)/define( 'AF_VERSION', '${NEW}' )/" autoforum-core.php
+          sed -i -E "s/(define\( 'AF_VERSION', ')[^']+('\);)/\1${NEW}\2/" autoforum-core.php
 
       # ── Commit version bump back to main ──────────────────────────────────
 
