@@ -2054,7 +2054,6 @@ class Admin_Panel {
     // ── Settings Page ─────────────────────────────────────────────────────────
 
     public function page_settings(): void {
-        }
         ?>
         <div class="wrap af-admin-wrap">
             <h1 class="af-admin-title">
