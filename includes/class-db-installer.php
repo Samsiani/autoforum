@@ -164,6 +164,13 @@ class DB_Installer {
     }
 
     /**
+     * Called by Plugin::init_hooks() — follows the uniform register_hooks() pattern.
+     */
+    public function register_hooks(): void {
+        $this->maybe_upgrade();
+    }
+
+    /**
      * Run on plugins_loaded to handle future version upgrades.
      */
     public function maybe_upgrade(): void {

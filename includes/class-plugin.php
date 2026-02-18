@@ -55,7 +55,7 @@ final class Plugin {
         add_action( 'init', [ $this, 'load_textdomain' ] );
 
         // Run DB migrations whenever the schema version is behind.
-        $this->db->maybe_upgrade();
+        $this->db->register_hooks();
 
         // Each sub-system self-registers its own hooks.
         $this->auth->register_hooks();
@@ -110,11 +110,16 @@ final class Plugin {
             'threads_per_page'    => 25,
             'primary_color'       => '#3b82f6',
             'hwid_reset_cooldown' => 7,     // days
+            'max_hwid_resets'     => 3,     // lifetime reset cap per license
             'license_duration'    => 365,   // days
             'woo_product_ids'     => [],    // WooCommerce product IDs that grant licenses
             'enable_rest_api'     => true,
             'show_demo_data'      => false, // When true the SPA displays hardcoded mock data.
         ];
+    }
+
+    public function get_license_manager(): License_Manager {
+        return $this->licenses;
     }
 
     // Prevent cloning / unserialization of the singleton.

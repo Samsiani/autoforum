@@ -21,6 +21,7 @@ $tables = [
     $wpdb->prefix . 'af_thanks',
     $wpdb->prefix . 'af_attachments',
     $wpdb->prefix . 'af_categories',
+    $wpdb->prefix . 'af_reports',
 ];
 
 foreach ( $tables as $table ) {

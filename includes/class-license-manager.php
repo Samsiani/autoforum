@@ -18,8 +18,13 @@ defined( 'ABSPATH' ) || exit;
 
 class License_Manager {
 
-    private const NONCE_HWID_RESET = 'af_user_hwid_reset';
-    private const MAX_USER_RESETS  = 3; // Hard cap in addition to cooldown.
+    private const NONCE_HWID_RESET     = 'af_user_hwid_reset';
+    private const DEFAULT_MAX_RESETS   = 3; // Fallback if not set in af_settings.
+
+    private function get_max_hwid_resets(): int {
+        $settings = get_option( 'af_settings', Plugin::default_settings() );
+        return absint( $settings['max_hwid_resets'] ?? self::DEFAULT_MAX_RESETS );
+    }
 
     public function register_hooks(): void {
         // WooCommerce: generate license when order status flips to "completed".
@@ -141,10 +146,15 @@ class License_Manager {
             return;
         }
 
+        $settings     = get_option( 'af_settings', Plugin::default_settings() );
+        $license_days = absint( $settings['license_duration'] ?? 365 );
+        $new_expiry   = gmdate( 'Y-m-d H:i:s', strtotime( "+{$license_days} days" ) );
+
         $table  = DB_Installer::licenses_table();
         $result = $wpdb->query(
             $wpdb->prepare(
-                "UPDATE {$table} SET status = 'active' WHERE order_id = %d AND status = 'suspended'",
+                "UPDATE {$table} SET status = 'active', expires_at = %s WHERE order_id = %d AND status = 'suspended'",
+                $new_expiry,
                 $parent_order_id
             )
         );
@@ -236,7 +246,7 @@ class License_Manager {
         }
 
         // Hard cap on lifetime resets.
-        if ( (int) $license->resets_count >= self::MAX_USER_RESETS ) {
+        if ( (int) $license->resets_count >= $this->get_max_hwid_resets() ) {
             wp_send_json_error( [
                 'message' => __( 'Maximum HWID resets reached. Please contact support.', 'autoforum' ),
                 'code'    => 'max_resets',
@@ -287,7 +297,7 @@ class License_Manager {
         wp_send_json_success( [
             'message'        => __( 'HWID cleared. Bind your new device on next launch.', 'autoforum' ),
             'resets_used'    => (int) $license->resets_count + 1,
-            'resets_allowed' => self::MAX_USER_RESETS,
+            'resets_allowed' => $this->get_max_hwid_resets(),
         ] );
     }
 
@@ -299,8 +309,8 @@ class License_Manager {
             return;
         }
 
-        // POST /wp-json/af/v1/validate-license
-        register_rest_route( 'af/v1', '/validate-license', [
+        // POST /wp-json/af/v1/licenses/validate
+        register_rest_route( 'af/v1', '/licenses/validate', [
             'methods'             => \WP_REST_Server::CREATABLE,
             'callback'            => [ $this, 'rest_validate_license' ],
             'permission_callback' => '__return_true', // Public — auth is the license key itself.
@@ -360,6 +370,7 @@ class License_Manager {
         // Check expiry.
         if ( $license->expires_at && strtotime( $license->expires_at ) < time() ) {
             $this->update_license_status( (int) $license->id, 'expired' );
+            $this->flush_license_cache( (int) $license->user_id, $key );
             return new \WP_REST_Response( [
                 'status'  => 'expired',
                 'message' => __( 'License has expired.', 'autoforum' ),
@@ -370,13 +381,20 @@ class License_Manager {
         if ( empty( $license->hwid ) ) {
             // First activation — bind the HWID.
             global $wpdb;
-            $wpdb->update(
+            $result = $wpdb->update(
                 DB_Installer::licenses_table(),
                 [ 'hwid' => $hwid ],
                 [ 'id'   => $license->id ],
                 [ '%s' ],
                 [ '%d' ]
             );
+            if ( false === $result ) {
+                return new \WP_REST_Response( [
+                    'status'  => 'error',
+                    'message' => __( 'Failed to bind device. Please try again.', 'autoforum' ),
+                ], 500 );
+            }
+            $this->flush_license_cache( (int) $license->user_id, $key );
         } elseif ( ! hash_equals( $license->hwid, $hwid ) ) {
             // HWID mismatch — different machine.
             return new \WP_REST_Response( [
@@ -415,13 +433,38 @@ class License_Manager {
                 'hwid'           => $lic->hwid ?: null,
                 'status'         => $lic->status,
                 'resets_used'    => (int) $lic->resets_count,
-                'resets_allowed' => self::MAX_USER_RESETS,
+                'resets_allowed' => $this->get_max_hwid_resets(),
                 'next_reset_at'  => $next_reset,
                 'expires_at'     => $lic->expires_at,
             ];
         }, $licenses );
 
         return new \WP_REST_Response( $data, 200 );
+    }
+
+    // ── Public Query Helpers ──────────────────────────────────────────────────
+
+    /**
+     * Returns true if the user has at least one active, non-expired license.
+     * Used by Forum_API for premium content gating.
+     */
+    public function user_has_active_license( int $user_id ): bool {
+        if ( ! $user_id ) {
+            return false;
+        }
+        global $wpdb;
+        $table = DB_Installer::licenses_table();
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from DB_Installer, no user input in schema.
+        return (bool) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM {$table}
+                 WHERE user_id = %d
+                   AND status = 'active'
+                   AND (expires_at IS NULL OR expires_at > NOW())
+                 LIMIT 1",
+                $user_id
+            )
+        );
     }
 
     // ── Database Helpers ──────────────────────────────────────────────────────

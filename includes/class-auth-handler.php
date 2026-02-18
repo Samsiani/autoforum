@@ -129,9 +129,12 @@ class Auth_Handler {
         $user->set_role( 'subscriber' );
 
         // Store forum-specific meta.
-        update_user_meta( $user_id, 'af_reputation', 0 );
-        update_user_meta( $user_id, 'af_post_count', 0 );
-        update_user_meta( $user_id, 'af_joined',     current_time( 'mysql', true ) );
+        update_user_meta( $user_id, 'af_reputation',    0 );
+        update_user_meta( $user_id, 'af_post_count',    0 );
+        update_user_meta( $user_id, 'af_location',      '' );
+        update_user_meta( $user_id, 'af_signature',     '' );
+        update_user_meta( $user_id, '_af_last_active',  time() );
+        update_user_meta( $user_id, 'af_joined',        current_time( 'mysql', true ) );
 
         // Auto-login.
         wp_set_current_user( $user_id );

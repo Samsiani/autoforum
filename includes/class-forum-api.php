@@ -242,27 +242,11 @@ class Forum_API {
         }
 
         // ── Premium gate: if this is a premium topic, verify the user has an active license ──
-        if ( $topic->is_premium ) {
-            $has_license = false;
-            if ( $current_uid ) {
-                $lic_table   = DB_Installer::licenses_table();
-                $has_license = (bool) $wpdb->get_var(
-                    $wpdb->prepare(
-                        "SELECT id FROM {$lic_table}
-                         WHERE user_id = %d
-                           AND status = 'active'
-                           AND (expires_at IS NULL OR expires_at > NOW())
-                         LIMIT 1",
-                        $current_uid
-                    )
-                );
-            }
-            if ( ! $has_license ) {
-                wp_send_json_error(
-                    [ 'message' => __( 'This is a premium thread. An active license is required to view it.', 'autoforum' ), 'code' => 'premium_required' ],
-                    403
-                );
-            }
+        if ( $topic->is_premium && ! autoforum()->get_license_manager()->user_has_active_license( $current_uid ) ) {
+            wp_send_json_error(
+                [ 'message' => __( 'This is a premium thread. An active license is required to view it.', 'autoforum' ), 'code' => 'premium_required' ],
+                403
+            );
         }
 
         $total = (int) $wpdb->get_var(
@@ -272,14 +256,17 @@ class Forum_API {
         // ── Fetch attachments for all returned posts in a single query ──────────
         $attachments_map = [];
         if ( ! empty( $rows ) ) {
-            $att_table = DB_Installer::attachments_table();
-            $post_ids  = array_map( fn( $r ) => (int) $r->id, $rows );
-            $ids_sql   = implode( ',', $post_ids );
-            $att_rows  = $wpdb->get_results(
-                "SELECT id, post_id, file_name, file_path, mime_type, file_size
-                 FROM {$att_table}
-                 WHERE post_id IN ({$ids_sql})
-                 ORDER BY id ASC"
+            $att_table    = DB_Installer::attachments_table();
+            $post_ids     = array_map( fn( $r ) => (int) $r->id, $rows );
+            $placeholders = implode( ',', array_fill( 0, count( $post_ids ), '%d' ) );
+            $att_rows     = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT id, post_id, file_name, file_path, mime_type, file_size
+                     FROM {$att_table}
+                     WHERE post_id IN ({$placeholders})
+                     ORDER BY id ASC",
+                    ...$post_ids
+                )
             );
             foreach ( $att_rows ?: [] as $a ) {
                 $attachments_map[ (int) $a->post_id ][] = [
@@ -643,17 +630,18 @@ class Forum_API {
             wp_send_json_error( [ 'message' => __( 'You cannot edit this post.', 'autoforum' ) ], 403 );
         }
 
-        // Sanitise and store.
+        // Sanitise and store — mirrors insert_post(): raw in content, parsed in content_parsed.
         $content_html = wp_kses( $this->parse_bbcode( $raw_content ), self::ALLOWED_TAGS );
 
         $updated = $wpdb->update(
             $posts_table,
             [
-                'content'    => $content_html,
-                'updated_at' => current_time( 'mysql' ),
+                'content'        => $raw_content,
+                'content_parsed' => $content_html,
+                'updated_at'     => current_time( 'mysql' ),
             ],
             [ 'id' => $post_id ],
-            [ '%s', '%s' ],
+            [ '%s', '%s', '%s' ],
             [ '%d' ]
         );
 
@@ -1017,12 +1005,13 @@ class Forum_API {
     // ── Heartbeat: mark user as online ────────────────────────────────────────
 
     public function ajax_heartbeat(): void {
+        check_ajax_referer( 'af_heartbeat', 'nonce' );
+
         $user_id = get_current_user_id();
         if ( ! $user_id ) {
             wp_send_json_error( [ 'message' => 'Not logged in.' ], 401 );
         }
 
-        check_ajax_referer( 'af_heartbeat', 'nonce' );
         update_user_meta( $user_id, '_af_last_active', time() );
         wp_send_json_success();
     }
@@ -1036,9 +1025,11 @@ class Forum_API {
         $posts_table  = DB_Installer::posts_table();
 
         // ── Totals ─────────────────────────────────────────────────────────────
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names from $wpdb / DB_Installer, no user input.
         $member_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users}" );
         $post_count   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$posts_table}" );
         $thread_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$topics_table}" );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
         // ── Online (users active in last 15 min via WP sessions) ──────────────
         $online = (int) $wpdb->get_var(
@@ -1051,6 +1042,7 @@ class Forum_API {
         );
 
         // ── Top Contributors (by post count meta) ─────────────────────────────
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- no user input; meta_key literals are hardcoded.
         $top_rows = $wpdb->get_results(
             "SELECT u.ID as id, u.display_name as name, u.user_login as username,
                     COALESCE(CAST(pm.meta_value AS UNSIGNED), 0) as post_count,
@@ -1075,6 +1067,7 @@ class Forum_API {
         }, $top_rows, array_keys( $top_rows ) );
 
         // ── Latest Posts ──────────────────────────────────────────────────────
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- no user input; all tables from trusted sources.
         $latest_rows = $wpdb->get_results(
             "SELECT p.id, t.title, t.id as topic_id,
                     u.display_name as author_name, u.ID as author_id,
@@ -1187,7 +1180,7 @@ class Forum_API {
             'id'               => (int) $r->id,
             'topic_id'         => (int) ( $r->topic_id ?? 0 ),
             'user_id'          => (int) ( $r->user_id ?? 0 ),
-            'content'          => wp_kses_post( $r->content ?? '' ),
+            'content'          => wp_kses( $r->content ?? '', self::ALLOWED_TAGS ),
             'excerpt'          => isset( $r->excerpt ) ? esc_html( $r->excerpt ) : null,
             'thanks_count'     => (int) ( $r->thanks_count ?? 0 ),
             'is_op'            => (bool) ( $r->is_op ?? false ),

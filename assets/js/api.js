@@ -237,7 +237,7 @@ const API = ( () => {
     // ── Licenses (REST API) ────────────────────────────────────────────────────
 
     async function validateLicense( { key, hwid } ) {
-        return _rest_post( 'validate-license', { key, hwid } );
+        return _rest_post( 'licenses/validate', { key, hwid } );
     }
 
     async function getLicenseInfo() {
