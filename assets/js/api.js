@@ -234,6 +234,13 @@ const API = ( () => {
         } );
     }
 
+    async function reportPost( postId ) {
+        return _ajax( 'af_report_post', {
+            nonce:   _nonce( 'reportPost' ),
+            post_id: postId,
+        } );
+    }
+
     // ── Licenses (REST API) ────────────────────────────────────────────────────
 
     async function validateLicense( { key, hwid } ) {
@@ -279,9 +286,6 @@ const API = ( () => {
     }
 
     function pingActive() {
-        // Only fire in live WP mode and when the user is logged in.
-        if ( CONFIG.DEMO_MODE ) return;
-        if ( ! State.isAuthenticated() ) return;
         _ajax( 'af_heartbeat', { nonce: _nonce( 'heartbeat' ) } ).catch( () => {} );
     }
 
@@ -314,6 +318,7 @@ const API = ( () => {
         deleteTopic,
         deletePost,
         editPost,
+        reportPost,
         // Licenses
         validateLicense,
         getLicenseInfo,

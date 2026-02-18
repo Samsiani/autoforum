@@ -82,4 +82,41 @@ The WooCommerce product IDs that trigger license issuance are configured in `af_
 
 ### Plugin Settings
 
-Stored in `wp_options` as `af_settings`. Key options: `forum_page_id`, `posts_per_page` (20), `threads_per_page` (25), `primary_color`, `hwid_reset_cooldown` (7 days), `license_duration` (365 days), `woo_product_ids` (array), `enable_rest_api`, `show_demo_data`.
+Stored in `wp_options` as `af_settings`. Key options: `forum_page_id`, `posts_per_page` (20), `threads_per_page` (25), `primary_color`, `hwid_reset_cooldown` (7 days), `max_hwid_resets` (3 lifetime cap), `license_duration` (365 days), `woo_product_ids` (array), `enable_rest_api`, `show_demo_data`.
+
+## JS Module Separation Rules
+
+These patterns are enforced across the codebase and must not be violated:
+
+### No business logic in state.js
+`state.js` holds only UI state (`currentUser`, `currentView`, `viewData`) and localStorage persistence. It must not contain server-side business logic. Specifically forbidden in state.js:
+- HWID reset tracking (`canResetHWID`, `performHWIDReset`, `getRemainingResets`)
+- Content-unlock tracking (`unlockedContent`, `unlockContent`, `isContentUnlocked`)
+- Any computation that mirrors server rules
+
+### No raw fetch() in views
+All network calls go through `api.js`. Views never call `fetch()` directly.
+
+### Logout flow
+Always call `API.logout()` before clearing local state:
+```js
+try { await API.logout(); } catch (e) { /* clear state regardless */ }
+State.setUser(null);
+Header.render();
+Router.navigateTo('home');
+```
+
+### HWID reset flow
+Call `API.resetHwid(licenseId, nonce)` directly. The license `id` (not key) comes from the user object returned by `safe_user_data()` — the nonce comes from `user.nonces.hwid_reset`. Never replicate cooldown/cap logic client-side.
+
+### Heartbeat guards
+The `DEMO_MODE` and auth guards for `API.pingActive()` live in `app.js`, not in `api.js`. `api.js` stays decoupled from `CONFIG` and `State`.
+
+### No emojis in Toast messages
+`Toast.success()`, `Toast.error()`, `Toast.info()`, `Toast.warning()` must not contain emoji characters.
+
+### Modal tab navigation
+Use `Modal.showAuthTab('register')` instead of calling `Modal.show()` followed by a `document.querySelector('[data-tab="register"]')?.click()` chain.
+
+### Server-authoritative content gating
+Never persist unlock state in `state.js`. After a successful unlock API call, re-render the view — the server response determines what is visible.

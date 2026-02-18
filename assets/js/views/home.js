@@ -287,8 +287,7 @@ const HomeView = {
         });
 
         document.getElementById('join-btn')?.addEventListener('click', () => {
-            Modal.show('auth-modal');
-            document.querySelector('[data-tab="register"]')?.click();
+            Modal.showAuthTab('register');
         });
     },
 

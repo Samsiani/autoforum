@@ -240,13 +240,14 @@ class Auth_Handler {
         $lic_table = \AutoForum\DB_Installer::licenses_table();
         $lic_rows  = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT license_key, status, expires_at FROM {$lic_table}
+                "SELECT id, license_key, status, expires_at FROM {$lic_table}
                  WHERE user_id = %d AND status IN ('active','suspended')
                  ORDER BY created_at DESC",
                 $user_id
             )
         );
         $licenses = array_map( fn( $l ) => [
+            'id'         => (int) $l->id,
             'key'        => esc_html( $l->license_key ),
             'status'     => esc_attr( $l->status ),
             'expires_at' => $l->expires_at

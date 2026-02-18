@@ -134,7 +134,7 @@ const Modal = {
             const data = await API.login(username, password, remember);
             State.setUser(data.user);
             this.hide('auth-modal');
-            Toast.success(`Welcome back, ${data.user.username}! 👋`);
+            Toast.success(`Welcome back, ${data.user.username}!`);
             Header.render();
             Router.navigateTo('home');
         } catch (err) {
@@ -143,6 +143,16 @@ const Modal = {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In';
         }
+    },
+
+    /**
+     * Open the auth modal on a specific tab ('login' or 'register').
+     * Scopes the tab query to #auth-modal so it is unambiguous.
+     */
+    showAuthTab(tab) {
+        this.show('auth-modal');
+        const tabEl = document.querySelector(`#auth-modal .af-modal-tab[data-tab="${tab}"]`);
+        tabEl?.click();
     },
 
     async _doRegister(form) {
@@ -169,7 +179,7 @@ const Modal = {
             const data = await API.register(username, email, password);
             State.setUser(data.user);
             this.hide('auth-modal');
-            Toast.success(`Account created! Welcome, ${data.user.username}! 🚗`);
+            Toast.success(`Account created! Welcome, ${data.user.username}!`);
             Header.render();
             Router.navigateTo('home');
         } catch (err) {

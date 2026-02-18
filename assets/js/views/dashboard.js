@@ -200,10 +200,10 @@ const DashboardView = {
       </div>
     </div>
     <div class="lic-footer">
-      <button class="btn btn-secondary btn-sm hwid-reset-btn" type="button" data-lic="${lic.key}">
+      <button class="btn btn-secondary btn-sm hwid-reset-btn" type="button" data-lic-id="${lic.id}">
         <i class="fa-solid fa-rotate"></i> Reset HWID
       </button>
-      <span class="hwid-warning" id="hwid-warning-${lic.key}"></span>
+      <span class="hwid-warning" id="hwid-warning-${lic.id}"></span>
     </div>
   </div>`).join('')}
 </div>`;
@@ -359,7 +359,8 @@ const DashboardView = {
             });
         });
 
-        document.getElementById('dash-logout')?.addEventListener('click', () => {
+        document.getElementById('dash-logout')?.addEventListener('click', async () => {
+            try { await API.logout(); } catch (e) { /* clear local state regardless */ }
             State.setUser(null);
             Toast.info('You have been signed out.');
             Header.render();
@@ -375,9 +376,27 @@ const DashboardView = {
 
     _bindSectionEvents(section, user) {
         // settings form
-        document.getElementById('settings-form')?.addEventListener('submit', e => {
+        document.getElementById('settings-form')?.addEventListener('submit', async e => {
             e.preventDefault();
-            Toast.success('Profile settings saved!');
+            const form = e.target;
+            const btn  = form.querySelector('[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving…';
+            try {
+                await API.updateProfile({
+                    display_name: form.querySelector('[name="display_name"]')?.value ?? '',
+                    email:        form.querySelector('[name="email"]')?.value ?? '',
+                    location:     form.querySelector('[name="location"]')?.value ?? '',
+                    bio:          form.querySelector('[name="bio"]')?.value ?? '',
+                    signature:    form.querySelector('[name="sig"]')?.value ?? '',
+                });
+                Toast.success('Profile settings saved!');
+            } catch (err) {
+                Toast.error(err.message ?? 'Could not save settings. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Changes';
+            }
         });
 
         // change password
@@ -386,24 +405,24 @@ const DashboardView = {
         });
 
         // HWID reset
-        document.querySelectorAll('[id^="hwid-reset-btn"]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const licId = btn.dataset.lic;
-                if (!State.canResetHWID()) {
-                    const hrs = Math.ceil(CONFIG.FORUM.HWID_RESET_COOLDOWN / 3600000);
-                    Toast.error(`HWID reset is on cooldown. Please wait ${hrs}h.`);
-                    document.getElementById(`hwid-warning-${licId}`).textContent = `On cooldown — try again later`;
-                    return;
-                }
+        document.querySelectorAll('.hwid-reset-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const licId  = btn.dataset.licId;
+                const nonce  = user.nonces?.hwid_reset ?? '';
+                const warnEl = document.getElementById(`hwid-warning-${licId}`);
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Resetting…';
                 btn.disabled = true;
-                setTimeout(() => {
-                    State.performHWIDReset();
+                try {
+                    await API.resetHwid(licId, nonce);
                     Toast.success('HWID reset successfully! New HWID will be assigned on next launch.');
+                    if (warnEl) warnEl.textContent = 'Reset applied — cooldown now active.';
+                } catch (err) {
+                    Toast.error(err.message ?? 'Could not reset HWID. Please try again.');
+                    if (warnEl) warnEl.textContent = err.message ?? 'Reset failed.';
+                } finally {
                     btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Reset HWID';
                     btn.disabled = false;
-                    document.getElementById(`hwid-warning-${licId}`).textContent = `Reset used — next reset in 24h`;
-                }, 1200);
+                }
             });
         });
 

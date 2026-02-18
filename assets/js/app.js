@@ -28,8 +28,11 @@ const App = {
         Router.init();
 
         // 6. Mark user as online (heartbeat) — fire immediately then every 5 min.
-        API.pingActive();
-        setInterval( () => API.pingActive(), 5 * 60 * 1000 );
+        //    Guards live here so api.js stays decoupled from CONFIG and State.
+        if ( ! CONFIG.DEMO_MODE && State.isAuthenticated() ) {
+            API.pingActive();
+            setInterval( () => { if ( State.isAuthenticated() ) API.pingActive(); }, 5 * 60 * 1000 );
+        }
 
         // 7. First-visit welcome toast (demo / standalone only).
         if ( CONFIG.DEMO_MODE && !localStorage.getItem('esyf_visited') ) {

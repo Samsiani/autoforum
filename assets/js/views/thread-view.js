@@ -443,7 +443,7 @@ RPM     BOOST   AFR     INJ_PW
     </p>
     <div class="premium-gate-actions">
       ${isLoggedIn
-        ? `<a class="btn btn-primary" href="/my-account/licenses" target="_blank">
+        ? `<a class="btn btn-primary" href="${(typeof AF_DATA !== 'undefined' ? AF_DATA.siteUrl : '') + '/my-account/licenses'}" target="_blank">
              <i class="fa-solid fa-key"></i> View My Licenses
            </a>`
         : `<button class="btn btn-primary" type="button" id="pg-login-btn">
@@ -576,8 +576,7 @@ RPM     BOOST   AFR     INJ_PW
                 btn.disabled = true;
                 try {
                     await API.thankPost(postId);
-                    State.unlockContent(postId);
-                    Toast.success('Premium content unlocked! 🔓');
+                    Toast.success('Premium content unlocked!');
                     this.render(Router.currentParams);
                 } catch (err) {
                     Toast.error(err.message ?? 'Could not unlock content. Please try again.');
@@ -612,10 +611,16 @@ RPM     BOOST   AFR     INJ_PW
 
         // report buttons
         document.querySelectorAll('.action-btn[title="Report"]').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 if (!State.isAuthenticated()) { Toast.warning('Sign in to report posts.'); return; }
-                const postId = btn.closest('.post-card')?.id?.replace('post-', '');
-                Toast.info('Report submitted. Our moderators will review this post shortly.');
+                const postId = parseInt(btn.closest('.post-card')?.id?.replace('post-', ''), 10);
+                if (!postId) return;
+                try {
+                    await API.reportPost(postId);
+                    Toast.info('Report submitted. Our moderators will review this post shortly.');
+                } catch (err) {
+                    Toast.error(err.message ?? 'Could not submit report. Please try again.');
+                }
             });
         });
 
