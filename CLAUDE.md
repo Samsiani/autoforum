@@ -10,7 +10,7 @@ AutoForum is a WordPress plugin (PHP 8.1+, WooCommerce 8.0+, WordPress 6.3+) pro
 
 There are no build steps. Deploy by placing the plugin directory in `wp-content/plugins/` and activating via the WordPress admin. The SPL autoloader in `autoforum-core.php` handles class loading automatically.
 
-**Testing endpoints:** Use the WordPress admin AJAX handler at `wp-admin/admin-ajax.php` with `action=af_*` parameters and valid nonces. All mutations require `X-WP-Nonce` (or `_wpnonce` POST param).
+**Testing endpoints:** Use the WordPress admin AJAX handler at `wp-admin/admin-ajax.php` with `action=af_*` parameters and valid nonces. **Every** endpoint — reads and writes alike — requires a `nonce` POST param (see Nonce Infrastructure below).
 
 **Database changes:** Increment `AF_DB_VERSION` in `autoforum-core.php` and add migration logic in `DB_Installer::maybe_update_schema()`. Use `dbDelta()` for safe schema changes — never write raw `CREATE TABLE` without it.
 
@@ -48,7 +48,7 @@ A vanilla JS Single-Page Application rendered inside `<div id="af-app">`. No fra
 
 Frontend → `api.js` → `admin-ajax.php?action=af_*` → `Forum_API` AJAX handler → `$wpdb` → MySQL
 
-All AJAX handlers validate nonces with `check_ajax_referer()`, check capabilities with `current_user_can()`, use `$wpdb->prepare()` for queries, sanitize input with `sanitize_*()`, and escape output with `esc_*()` / `wp_kses()`.
+All AJAX handlers — including read-only ones — validate nonces with `check_ajax_referer()`, check capabilities with `current_user_can()`, use `$wpdb->prepare()` for queries, sanitize input with `sanitize_*()`, and escape output with `esc_*()` / `wp_kses()`.
 
 ### Content Gating
 
@@ -84,6 +84,22 @@ The WooCommerce product IDs that trigger license issuance are configured in `af_
 
 Stored in `wp_options` as `af_settings`. Key options: `forum_page_id`, `posts_per_page` (20), `threads_per_page` (25), `primary_color`, `hwid_reset_cooldown` (7 days), `max_hwid_resets` (3 lifetime cap), `license_duration` (365 days), `woo_product_ids` (array), `enable_rest_api`, `show_demo_data`.
 
+## Nonce Infrastructure
+
+Every AJAX endpoint has a corresponding nonce. The full lifecycle for any `af_*` action:
+
+1. **PHP constant** — `private const NONCE_FOO = 'af_foo';` in the relevant handler class.
+2. **Generation** — `'foo' => wp_create_nonce( 'af_foo' )` added to the `nonces` array in `class-assets.php` `enqueue_frontend()`.
+3. **Consumption (JS)** — `nonce: _nonce( 'foo' )` passed in the `api.js` method's params object.
+4. **Verification (PHP)** — `check_ajax_referer( self::NONCE_FOO, 'nonce' )` as the first line of the AJAX handler.
+
+When adding a new endpoint, all four steps are required. Read-only endpoints are not exempt.
+
+**Current nonce keys in `AF_DATA.nonces`:**
+`login`, `register`, `getUserData`, `getCategories`, `getTopics`, `getPosts`, `viewTopic`, `getHomeStats`, `getUserProfile`, `createTopic`, `createPost`, `thankPost`, `search`, `deleteTopic`, `deletePost`, `editPost`, `uploadAttachment`, `heartbeat`
+
+User-session nonces (`logout`, `profile`, `hwid_reset`) are generated per-request and returned inside the `user` object from `safe_user_data()` / `ajax_get_user_data()`, not baked into `AF_DATA.nonces` at page load.
+
 ## JS Module Separation Rules
 
 These patterns are enforced across the codebase and must not be violated:
@@ -107,7 +123,7 @@ Router.navigateTo('home');
 ```
 
 ### HWID reset flow
-Call `API.resetHwid(licenseId, nonce)` directly. The license `id` (not key) comes from the user object returned by `safe_user_data()` — the nonce comes from `user.nonces.hwid_reset`. Never replicate cooldown/cap logic client-side.
+Call `API.resetHwid(licenseId, nonce)` directly. The license `id` (not key) comes from the user object returned by `safe_user_data()` — the nonce comes from `user.nonces.hwid_reset`. Never replicate cooldown/cap logic client-side. The server enforces: per-user rate limit (5 attempts/hour), per-license cooldown (`hwid_reset_cooldown` days), and lifetime cap (`max_hwid_resets`).
 
 ### Heartbeat guards
 The `DEMO_MODE` and auth guards for `API.pingActive()` live in `app.js`, not in `api.js`. `api.js` stays decoupled from `CONFIG` and `State`.
