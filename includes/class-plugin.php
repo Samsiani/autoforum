@@ -54,6 +54,9 @@ final class Plugin {
         // Internationalisation.
         add_action( 'init', [ $this, 'load_textdomain' ] );
 
+        // GitHub-based automatic updates.
+        $this->init_update_checker();
+
         // Run DB migrations whenever the schema version is behind.
         $this->db->register_hooks();
 
@@ -64,6 +67,35 @@ final class Plugin {
         $this->api->register_hooks();
         $this->shortcode->register_hooks();
         $this->assets->register_hooks();
+    }
+
+    // ── Update Checker ───────────────────────────────────────────────────────
+
+    /**
+     * Initialises the YahnisElsts Plugin Update Checker (v5) pointing at the
+     * Samsiani/autoforum GitHub repository.
+     *
+     * The checker looks for a .zip asset attached to each GitHub Release.
+     * Releases are created automatically by the release.yml GitHub Action
+     * whenever a PR is merged to main.
+     */
+    private function init_update_checker(): void {
+        $puc_path = AF_PLUGIN_DIR . 'vendor/plugin-update-checker/load-v5p6.php';
+        if ( ! file_exists( $puc_path ) ) {
+            return; // Library not present — fail silently.
+        }
+
+        require_once $puc_path;
+
+        $checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+            'https://github.com/Samsiani/autoforum/',
+            AF_PLUGIN_FILE,
+            'autoforum'
+        );
+
+        // Use the .zip file attached to each GitHub Release rather than the
+        // raw source archive so that the vendor/ directory is included.
+        $checker->getVcsApi()->enableReleaseAssets();
     }
 
     // ── Activation / Deactivation ────────────────────────────────────────────
