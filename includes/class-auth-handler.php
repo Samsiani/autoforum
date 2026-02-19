@@ -72,9 +72,11 @@ class Auth_Handler {
         wp_set_auth_cookie( $user->ID, ! empty( $_POST['remember'] ) );
 
         wp_send_json_success( [
-            'message'  => __( 'Logged in successfully.', 'autoforum' ),
-            'redirect' => esc_url( apply_filters( 'af_login_redirect', home_url(), $user ) ),
-            'user'     => $this->safe_user_data( $user ),
+            'message'   => __( 'Logged in successfully.', 'autoforum' ),
+            'redirect'  => esc_url( apply_filters( 'af_login_redirect', home_url(), $user ) ),
+            'user'      => $this->safe_user_data( $user ),
+            'nonces'    => $this->frontend_nonces(),
+            'restNonce' => wp_create_nonce( 'wp_rest' ),
         ] );
     }
 
@@ -149,8 +151,10 @@ class Auth_Handler {
         do_action( 'af_user_registered', $user_id );
 
         wp_send_json_success( [
-            'message' => __( 'Account created! Welcome to the forum.', 'autoforum' ),
-            'user'    => $this->safe_user_data( $user ),
+            'message'   => __( 'Account created! Welcome to the forum.', 'autoforum' ),
+            'user'      => $this->safe_user_data( $user ),
+            'nonces'    => $this->frontend_nonces(),
+            'restNonce' => wp_create_nonce( 'wp_rest' ),
         ] );
     }
 
@@ -274,6 +278,33 @@ class Auth_Handler {
                 'hwid_reset'  => License_Manager::hwid_nonce(),
                 'getUserData' => wp_create_nonce( 'af_get_user_data' ),
             ],
+        ];
+    }
+
+    /**
+     * Returns a fresh set of all AF_DATA.nonces after the user context changes
+     * (login / registration). These replace the stale guest nonces that were
+     * baked into the page at load time.
+     */
+    private function frontend_nonces(): array {
+        return [
+            'getUserData'      => wp_create_nonce( 'af_get_user_data' ),
+            'getCategories'    => wp_create_nonce( 'af_get_categories' ),
+            'getTopics'        => wp_create_nonce( 'af_get_topics' ),
+            'getPosts'         => wp_create_nonce( 'af_get_posts' ),
+            'viewTopic'        => wp_create_nonce( 'af_view_topic' ),
+            'getHomeStats'     => wp_create_nonce( 'af_get_home_stats' ),
+            'getUserProfile'   => wp_create_nonce( 'af_get_user_profile' ),
+            'createTopic'      => wp_create_nonce( 'af_create_topic' ),
+            'createPost'       => wp_create_nonce( 'af_create_post' ),
+            'thankPost'        => wp_create_nonce( 'af_thank_post' ),
+            'search'           => wp_create_nonce( 'af_search' ),
+            'deleteTopic'      => wp_create_nonce( 'af_delete_topic' ),
+            'deletePost'       => wp_create_nonce( 'af_delete_post' ),
+            'editPost'         => wp_create_nonce( 'af_edit_post' ),
+            'uploadAttachment' => wp_create_nonce( 'af_upload_attachment' ),
+            'heartbeat'        => wp_create_nonce( 'af_heartbeat' ),
+            'reportPost'       => wp_create_nonce( 'af_report_post' ),
         ];
     }
 
