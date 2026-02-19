@@ -132,6 +132,14 @@ const Modal = {
 
         try {
             const data = await API.login(username, password, remember);
+            // Refresh all nonces — the page-load nonces were generated for the
+            // guest (user 0) and are now invalid for the logged-in user.
+            if ( data.nonces && typeof AF_DATA !== 'undefined' ) {
+                Object.assign( AF_DATA.nonces, data.nonces );
+            }
+            if ( data.restNonce && typeof AF_DATA !== 'undefined' ) {
+                AF_DATA.restNonce = data.restNonce;
+            }
             State.setUser(data.user);
             this.hide('auth-modal');
             Toast.success(`Welcome back, ${data.user.username}!`);
@@ -177,6 +185,13 @@ const Modal = {
 
         try {
             const data = await API.register(username, email, password);
+            // Same nonce refresh as login — registration also switches user context.
+            if ( data.nonces && typeof AF_DATA !== 'undefined' ) {
+                Object.assign( AF_DATA.nonces, data.nonces );
+            }
+            if ( data.restNonce && typeof AF_DATA !== 'undefined' ) {
+                AF_DATA.restNonce = data.restNonce;
+            }
             State.setUser(data.user);
             this.hide('auth-modal');
             Toast.success(`Account created! Welcome, ${data.user.username}!`);

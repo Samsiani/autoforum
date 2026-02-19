@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AutoForum is a WordPress plugin (PHP 8.1+, WooCommerce 8.0+, WordPress 6.3+) providing a high-performance automotive forum with license management and HWID (Hardware ID) binding. It uses no Composer or NPM — all PHP and JS are written from scratch.
 
+**Version Management:** Do not manually update version numbers in `autoforum-core.php`. The GitHub Action `release.yml` automatically increments the patch version upon every merge to `main` and publishes a GitHub Release with a deployable `autoforum.zip` attached.
+
 ## Development Setup
 
 There are no build steps. Deploy by placing the plugin directory in `wp-content/plugins/` and activating via the WordPress admin. The SPL autoloader in `autoforum-core.php` handles class loading automatically.
