@@ -19,6 +19,7 @@ final class Plugin {
     // Sub-system references (lazy-instantiated via getters).
     private DB_Installer    $db;
     private Auth_Handler    $auth;
+    private Legacy_Auth     $legacy_auth;
     private License_Manager $licenses;
     private Admin_Panel     $admin;
     private Forum_API       $api;
@@ -37,9 +38,10 @@ final class Plugin {
     }
 
     private function __construct() {
-        $this->db       = new DB_Installer();
-        $this->auth     = new Auth_Handler();
-        $this->licenses = new License_Manager();
+        $this->db          = new DB_Installer();
+        $this->auth        = new Auth_Handler();
+        $this->legacy_auth = new Legacy_Auth();
+        $this->licenses    = new License_Manager();
         $this->admin    = new Admin_Panel();
         $this->api      = new Forum_API();
         $this->shortcode = new Shortcode();
@@ -62,6 +64,7 @@ final class Plugin {
 
         // Each sub-system self-registers its own hooks.
         $this->auth->register_hooks();
+        $this->legacy_auth->register_hooks();
         $this->licenses->register_hooks();
         $this->admin->register_hooks();
         $this->api->register_hooks();
