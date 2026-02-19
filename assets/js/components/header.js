@@ -121,6 +121,11 @@ const Header = {
                 // Even if the AJAX call fails, clear local state so the user
                 // is not left in a zombie-logged-in UI state.
             }
+            // Mirror the server-side logout in AF_DATA so the logout nonce
+            // path in api.js stays consistent for the rest of the page lifetime.
+            if ( typeof AF_DATA !== 'undefined' ) {
+                AF_DATA.currentUser = null;
+            }
             State.setUser(null);
             Toast.info('You have been signed out.');
             this.render();
