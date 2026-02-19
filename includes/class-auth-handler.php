@@ -72,11 +72,9 @@ class Auth_Handler {
         wp_set_auth_cookie( $user->ID, ! empty( $_POST['remember'] ) );
 
         wp_send_json_success( [
-            'message'   => __( 'Logged in successfully.', 'autoforum' ),
-            'redirect'  => esc_url( apply_filters( 'af_login_redirect', home_url(), $user ) ),
-            'user'      => $this->safe_user_data( $user ),
-            'nonces'    => $this->frontend_nonces(),
-            'restNonce' => wp_create_nonce( 'wp_rest' ),
+            'message'  => __( 'Logged in successfully.', 'autoforum' ),
+            'redirect' => esc_url( apply_filters( 'af_login_redirect', home_url(), $user ) ),
+            'user'     => $this->safe_user_data( $user ),
         ] );
     }
 
@@ -151,10 +149,8 @@ class Auth_Handler {
         do_action( 'af_user_registered', $user_id );
 
         wp_send_json_success( [
-            'message'   => __( 'Account created! Welcome to the forum.', 'autoforum' ),
-            'user'      => $this->safe_user_data( $user ),
-            'nonces'    => $this->frontend_nonces(),
-            'restNonce' => wp_create_nonce( 'wp_rest' ),
+            'message' => __( 'Account created! Welcome to the forum.', 'autoforum' ),
+            'user'    => $this->safe_user_data( $user ),
         ] );
     }
 

@@ -132,24 +132,16 @@ const Modal = {
 
         try {
             const data = await API.login(username, password, remember);
-            // Refresh all nonces — the page-load nonces were generated for the
-            // guest (user 0) and are now invalid for the logged-in user.
-            if ( data.nonces && typeof AF_DATA !== 'undefined' ) {
-                Object.assign( AF_DATA.nonces, data.nonces );
-            }
-            if ( data.restNonce && typeof AF_DATA !== 'undefined' ) {
-                AF_DATA.restNonce = data.restNonce;
-            }
-            // Keep AF_DATA.currentUser in sync so api.js logout() can read
-            // user.nonces.logout from it (it reads AF_DATA.currentUser, not State).
-            if ( typeof AF_DATA !== 'undefined' ) {
-                AF_DATA.currentUser = data.user;
-            }
+            // Persist user to State so the header updates immediately.
+            // Then reload: nonces in the login response are invalid because
+            // wp_set_auth_cookie() writes the new session token to Set-Cookie
+            // headers only — not to $_COOKIE — so wp_create_nonce() inside the
+            // same AJAX request embeds the wrong token. A reload lets PHP
+            // generate all nonces correctly from the live auth cookie.
             State.setUser(data.user);
             this.hide('auth-modal');
             Toast.success(`Welcome back, ${data.user.username}!`);
-            Header.render();
-            Router.navigateTo('home');
+            setTimeout( () => window.location.reload(), 800 );
         } catch (err) {
             if (errorEl) errorEl.textContent = err.message ?? 'Login failed. Please try again.';
         } finally {
@@ -190,21 +182,11 @@ const Modal = {
 
         try {
             const data = await API.register(username, email, password);
-            // Same nonce refresh as login — registration also switches user context.
-            if ( data.nonces && typeof AF_DATA !== 'undefined' ) {
-                Object.assign( AF_DATA.nonces, data.nonces );
-            }
-            if ( data.restNonce && typeof AF_DATA !== 'undefined' ) {
-                AF_DATA.restNonce = data.restNonce;
-            }
-            if ( typeof AF_DATA !== 'undefined' ) {
-                AF_DATA.currentUser = data.user;
-            }
+            // Same reload pattern as login — see _doLogin comment.
             State.setUser(data.user);
             this.hide('auth-modal');
             Toast.success(`Account created! Welcome, ${data.user.username}!`);
-            Header.render();
-            Router.navigateTo('home');
+            setTimeout( () => window.location.reload(), 800 );
         } catch (err) {
             if (errorEl) errorEl.textContent = err.message ?? 'Registration failed. Please try again.';
         } finally {
