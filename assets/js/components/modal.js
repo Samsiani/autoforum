@@ -140,6 +140,11 @@ const Modal = {
             if ( data.restNonce && typeof AF_DATA !== 'undefined' ) {
                 AF_DATA.restNonce = data.restNonce;
             }
+            // Keep AF_DATA.currentUser in sync so api.js logout() can read
+            // user.nonces.logout from it (it reads AF_DATA.currentUser, not State).
+            if ( typeof AF_DATA !== 'undefined' ) {
+                AF_DATA.currentUser = data.user;
+            }
             State.setUser(data.user);
             this.hide('auth-modal');
             Toast.success(`Welcome back, ${data.user.username}!`);
@@ -191,6 +196,9 @@ const Modal = {
             }
             if ( data.restNonce && typeof AF_DATA !== 'undefined' ) {
                 AF_DATA.restNonce = data.restNonce;
+            }
+            if ( typeof AF_DATA !== 'undefined' ) {
+                AF_DATA.currentUser = data.user;
             }
             State.setUser(data.user);
             this.hide('auth-modal');
