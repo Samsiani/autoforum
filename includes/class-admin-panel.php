@@ -1480,7 +1480,11 @@ class Admin_Panel {
         $category_id  = absint( $_POST['category_id'] ?? 0 );
         $name         = sanitize_text_field( $_POST['cat_name'] ?? '' );
         $description  = sanitize_textarea_field( $_POST['cat_description'] ?? '' );
-        $icon         = sanitize_text_field( $_POST['cat_icon'] ?? '' );
+        // Validate icon: must be a FontAwesome class suffix (e.g. "fa-car") or empty.
+        $icon_raw     = sanitize_text_field( $_POST['cat_icon'] ?? '' );
+        $icon         = ( $icon_raw === '' || preg_match( '/^fa-[a-z0-9-]+$/', $icon_raw ) )
+                        ? $icon_raw
+                        : '';
         $color        = sanitize_hex_color( $_POST['cat_color'] ?? '' ) ?: '#3b82f6';
         $sort_order   = absint( $_POST['cat_sort_order'] ?? 0 );
 
@@ -1542,12 +1546,13 @@ class Admin_Panel {
     // ── AJAX Handlers (Steps 4 & 5) ───────────────────────────────────────────
 
     public function ajax_resolve_report(): void {
-        $id = absint( $_POST['id'] ?? 0 );
-        // Per-record nonce prevents replay attacks against other report IDs.
-        check_ajax_referer( 'af_resolve_report_' . $id, 'nonce' );
+        // Capability check first — fast-fail for non-admins before any DB work.
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( __( 'Access denied.', 'autoforum' ) );
         }
+        $id = absint( $_POST['id'] ?? 0 );
+        // Per-record nonce prevents replay attacks against other report IDs.
+        check_ajax_referer( 'af_resolve_report_' . $id, 'nonce' );
 
         global $wpdb;
         $result = $wpdb->update(

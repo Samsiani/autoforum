@@ -68,7 +68,7 @@ class Forum_API {
 
     public function register_hooks(): void {
         // Public reads (no login required).
-        add_action( 'wp_ajax_nopriv_af_get_user_profile', [ $this, 'ajax_get_user_profile' ] );
+        // Note: af_get_user_profile requires login — nopriv intentionally omitted (license data).
         add_action( 'wp_ajax_af_get_user_profile',          [ $this, 'ajax_get_user_profile' ] );
         add_action( 'wp_ajax_nopriv_af_get_home_stats',  [ $this, 'ajax_get_home_stats' ] );
         add_action( 'wp_ajax_af_get_home_stats',          [ $this, 'ajax_get_home_stats' ] );
@@ -81,7 +81,7 @@ class Forum_API {
         add_action( 'wp_ajax_af_get_topics',            [ $this, 'ajax_get_topics' ] );
         add_action( 'wp_ajax_af_get_posts',             [ $this, 'ajax_get_posts' ] );
         add_action( 'wp_ajax_af_search',                [ $this, 'ajax_search' ] );
-        // View counter (fire-and-forget, no nonce needed — POST still prevents CSRF).
+        // View counter — nonce required via check_ajax_referer() in the handler.
         add_action( 'wp_ajax_nopriv_af_view_topic',     [ $this, 'ajax_view_topic' ] );
         add_action( 'wp_ajax_af_view_topic',            [ $this, 'ajax_view_topic' ] );
         // Authenticated write actions.
@@ -162,7 +162,8 @@ class Forum_API {
         );
 
         if ( $wpdb->last_error ) {
-            wp_send_json_error( [ 'message' => 'Database error: ' . $wpdb->last_error ], 500 );
+            error_log( 'AutoForum DB Error in ' . __METHOD__ . ': ' . $wpdb->last_error );
+            wp_send_json_error( [ 'message' => 'Database error.' ], 500 );
         }
 
         $total = (int) $wpdb->get_var(
@@ -234,7 +235,8 @@ class Forum_API {
         );
 
         if ( $wpdb->last_error ) {
-            wp_send_json_error( [ 'message' => 'Database error: ' . $wpdb->last_error ], 500 );
+            error_log( 'AutoForum DB Error in ' . __METHOD__ . ': ' . $wpdb->last_error );
+            wp_send_json_error( [ 'message' => 'Database error.' ], 500 );
         }
 
         // Fetch topic meta (locked / prefix / title / is_premium) to return alongside posts.
@@ -764,7 +766,7 @@ class Forum_API {
     private function parse_bbcode( string $text ): string {
         // [quote=Author]...[/quote]  →  <blockquote class="af-quote"><cite>Author</cite>...</blockquote>
         $text = preg_replace_callback(
-            '/\[quote=([^\]]{1,80})\](.*?)\[\/quote\]/si',
+            '/\[quote=([^\]]{1,80})\]([\s\S]{0,10000}?)\[\/quote\]/si',
             static function ( array $m ): string {
                 $author = esc_html( trim( $m[1] ) );
                 $body   = nl2br( esc_html( trim( $m[2] ) ) );
@@ -774,7 +776,7 @@ class Forum_API {
         );
         // Bare [quote]...[/quote] (no author)
         $text = preg_replace_callback(
-            '/\[quote\](.*?)\[\/quote\]/si',
+            '/\[quote\]([\s\S]{0,10000}?)\[\/quote\]/si',
             static function ( array $m ): string {
                 $body = nl2br( esc_html( trim( $m[1] ) ) );
                 return '<blockquote class="af-quote">' . $body . '</blockquote>';
@@ -1119,6 +1121,10 @@ class Forum_API {
 
     public function ajax_get_user_profile(): void {
         check_ajax_referer( self::NONCE_USER_PROFILE, 'nonce' );
+
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( [ 'message' => __( 'Login required.', 'autoforum' ) ], 401 );
+        }
 
         $user_id = absint( $_POST['user_id'] ?? 0 );
         if ( ! $user_id ) {
