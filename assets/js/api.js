@@ -242,6 +242,15 @@ const API = ( () => {
         } );
     }
 
+    // ── Account Update (first-login modal) ────────────────────────────────────
+
+    async function accountUpdated( fields ) {
+        return _ajax( 'af_account_updated', {
+            nonce: _nonce( 'accountUpdate' ),
+            ...fields,
+        } );
+    }
+
     // ── Easy Tuner ────────────────────────────────────────────────────────────
 
     async function etConnect( email, password ) {
@@ -338,6 +347,8 @@ const API = ( () => {
         deletePost,
         editPost,
         reportPost,
+        // Account update
+        accountUpdated,
         // Easy Tuner
         etConnect,
         etDisconnect,

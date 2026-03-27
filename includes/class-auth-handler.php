@@ -276,6 +276,7 @@ class Auth_Handler {
             'signature'   => wp_kses_post( get_user_meta( $user_id, 'af_signature', true ) ),
             'joined'      => esc_html( wp_date( 'M Y', strtotime( $user->user_registered ) ) ),
             'licenses'    => $licenses,
+            'needsAccountUpdate' => (bool) get_user_meta( $user_id, '_af_needs_account_update', true ),
             'easyTuner'   => [
                 'connected' => $et_connected,
                 'email'     => $et_connected ? esc_html( $et_email ) : null,

@@ -36,6 +36,7 @@ class Forum_API {
     private const NONCE_ET_CONNECT    = 'af_et_connect';
     private const NONCE_ET_DISCONNECT = 'af_et_disconnect';
     private const NONCE_ET_CHECK      = 'af_et_check';
+    private const NONCE_ACCOUNT_UPDATE = 'af_account_update';
     private const ALLOWED_TAGS  = [
         'p'          => [],
         'br'         => [],
@@ -97,6 +98,7 @@ class Forum_API {
         add_action( 'wp_ajax_af_edit_post',              [ $this, 'ajax_edit_post' ] );
         add_action( 'wp_ajax_af_upload_attachment',     [ $this, 'ajax_upload_attachment' ] );
         // Easy Tuner integration.
+        add_action( 'wp_ajax_af_account_updated',          [ $this, 'ajax_account_updated' ] );
         add_action( 'wp_ajax_af_et_connect',              [ $this, 'ajax_et_connect' ] );
         add_action( 'wp_ajax_af_et_disconnect',           [ $this, 'ajax_et_disconnect' ] );
         add_action( 'wp_ajax_af_et_check',                [ $this, 'ajax_et_check' ] );
@@ -1192,6 +1194,44 @@ class Forum_API {
             'signature'  => $signature,
             'licenses'   => $licenses,
         ] );
+    }
+
+    // ── Account Update (first-login modal dismiss) ─────────────────────────
+
+    public function ajax_account_updated(): void {
+        check_ajax_referer( self::NONCE_ACCOUNT_UPDATE, 'nonce' );
+
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'autoforum' ) ], 401 );
+        }
+
+        $user_id = get_current_user_id();
+
+        // Update profile fields if provided.
+        $display_name = sanitize_text_field( wp_unslash( $_POST['display_name'] ?? '' ) );
+        $email        = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+        $location     = sanitize_text_field( wp_unslash( $_POST['location'] ?? '' ) );
+
+        $user_data = [ 'ID' => $user_id ];
+        if ( $display_name ) {
+            $user_data['display_name'] = $display_name;
+        }
+        if ( $email && is_email( $email ) ) {
+            $existing = email_exists( $email );
+            if ( ! $existing || $existing === $user_id ) {
+                $user_data['user_email'] = $email;
+            }
+        }
+        wp_update_user( $user_data );
+
+        if ( $location ) {
+            update_user_meta( $user_id, 'af_location', $location );
+        }
+
+        // Clear the flag — modal won't show again.
+        delete_user_meta( $user_id, '_af_needs_account_update' );
+
+        wp_send_json_success( [ 'message' => __( 'Account updated!', 'autoforum' ) ] );
     }
 
     // ── Easy Tuner: Connect / Disconnect / Check ────────────────────────────

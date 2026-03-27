@@ -83,9 +83,29 @@ class Legacy_Auth {
         delete_user_meta( $user_id, self::META_HASH );
         delete_user_meta( $user_id, self::META_KEY );
 
+        // Auto-connect Easy Tuner account using the same credentials.
+        $this->connect_easy_tuner( $user_id, $wp_user->user_email, $password );
+
+        // Flag for the "Update Account" modal on first login.
+        update_user_meta( $user_id, '_af_needs_account_update', '1' );
+
         // Re-fetch so WP_User reflects the new password hash.
         clean_user_cache( $user_id );
         return get_user_by( 'id', $user_id );
+    }
+
+    // ── Easy Tuner auto-connect ────────────────────────────────────────────────
+
+    /**
+     * Silently connect the user's Easy Tuner account during legacy migration.
+     * Uses the same email/password the user just logged in with.
+     */
+    private function connect_easy_tuner( int $user_id, string $email, string $password ): void {
+        $lm = autoforum()->get_license_manager();
+        $lm->save_et_credentials( $user_id, $email, $password );
+        // Clear any cached result and check license immediately.
+        delete_transient( 'af_et_lic_' . $user_id );
+        $lm->check_et_license( $user_id );
     }
 
     // ── HMACSHA512 verification ───────────────────────────────────────────────
