@@ -3,7 +3,6 @@ const DashboardView = {
     SECTIONS: [
         { id: 'overview',  icon: 'fa-gauge',             label: 'Overview' },
         { id: 'licenses',  icon: 'fa-key',               label: 'My Licenses' },
-        { id: 'easytuner', icon: 'fa-plug',              label: 'Easy Tuner' },
         { id: 'posts',     icon: 'fa-comment-dots',      label: 'My Posts' },
         { id: 'settings',  icon: 'fa-gear',              label: 'Settings' },
         { id: 'security',  icon: 'fa-shield-halved',     label: 'Security' }
@@ -106,7 +105,6 @@ const DashboardView = {
             case 'overview': return this._sectionOverview(user);
             case 'licenses': return this._sectionLicenses(user);
             case 'posts':    return this._sectionPosts(user);
-            case 'easytuner': return this._sectionEasyTuner(user);
             case 'settings': return this._sectionSettings(user);
             case 'security': return this._sectionSecurity(user);
             default: return this._sectionOverview(user);
@@ -172,42 +170,61 @@ const DashboardView = {
     },
 
     _sectionLicenses(user) {
-        const licenses = user.licenses || [];
-        return `
+        const et = user.easyTuner || {};
+        if (et.connected) {
+            return `
 <div class="dash-section">
   <h2 class="dash-title"><i class="fa-solid fa-key"></i> My Licenses</h2>
-  ${licenses.length === 0 ? `
-  <div class="empty-state">
-    <i class="fa-solid fa-key-skeleton"></i>
-    <p>No active licenses found on your account.</p>
-  </div>` : licenses.map(lic => `
-  <div class="license-card${lic.status === 'active' ? ' active-license' : ''}">
+  <div class="license-card${et.active ? ' active-license' : ''}">
     <div class="lic-header">
       <div class="lic-name">
         <i class="fa-solid fa-certificate"></i>
-        EsyTuner Pro License
+        EasyTuner Pro License
       </div>
-      <span class="badge ${lic.status === 'active' ? 'badge-active' : 'badge-pinned'}">
-        ${lic.status === 'active' ? 'Active' : lic.status.charAt(0).toUpperCase() + lic.status.slice(1)}
-      </span>
+      <span class="badge ${et.active ? 'badge-active' : 'badge-pinned'}" id="et-status-badge">${et.active ? 'Active' : 'Inactive'}</span>
     </div>
     <div class="lic-body">
       <div class="lic-row">
-        <span class="lic-lbl">License Key</span>
-        <span class="lic-val mono">${lic.key}</span>
+        <span class="lic-lbl">Email</span>
+        <span class="lic-val">${et.email}</span>
       </div>
       <div class="lic-row">
-        <span class="lic-lbl">Expires</span>
-        <span class="lic-val">${lic.expires_at ?? 'Never'}</span>
+        <span class="lic-lbl">User ID</span>
+        <span class="lic-val mono">${et.userId || 'N/A'}</span>
       </div>
     </div>
     <div class="lic-footer">
-      <button class="btn btn-secondary btn-sm hwid-reset-btn" type="button" data-lic-id="${lic.id}">
-        <i class="fa-solid fa-rotate"></i> Reset HWID
+      <button class="btn btn-secondary btn-sm" type="button" id="et-refresh-btn">
+        <i class="fa-solid fa-arrows-rotate"></i> Refresh Status
       </button>
-      <span class="hwid-warning" id="hwid-warning-${lic.id}"></span>
+      <button class="btn btn-secondary btn-sm dash-nav-item--danger" type="button" id="et-disconnect-btn">
+        <i class="fa-solid fa-plug-circle-xmark"></i> Disconnect
+      </button>
     </div>
-  </div>`).join('')}
+  </div>
+</div>`;
+        }
+        return `
+<div class="dash-section">
+  <h2 class="dash-title"><i class="fa-solid fa-key"></i> My Licenses</h2>
+  <div class="card">
+    <div class="card-header"><span class="card-title">Connect Your Easy Tuner Account</span></div>
+    <div class="card-body">
+      <p style="color:var(--text-muted);margin-bottom:1rem">Link your Easy Tuner account to activate your license on this forum.</p>
+      <div class="form-group">
+        <label class="form-label">Easy Tuner Email</label>
+        <input class="form-input" type="email" id="et-email" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Easy Tuner Password</label>
+        <input class="form-input" type="password" id="et-password" placeholder="Your Easy Tuner password">
+      </div>
+      <button class="btn btn-primary" type="button" id="et-connect-btn">
+        <i class="fa-solid fa-plug"></i> Connect Account
+      </button>
+      <span id="et-connect-msg" style="margin-left:1rem;color:var(--text-muted)"></span>
+    </div>
+  </div>
 </div>`;
     },
 
@@ -505,8 +522,8 @@ const DashboardView = {
                 const userData = await API.getUserData();
                 if (userData?.user) {
                     State.setUser(userData.user);
-                    document.getElementById('dash-content').innerHTML = this._renderSection('easytuner', userData.user);
-                    this._bindSectionEvents('easytuner', userData.user);
+                    document.getElementById('dash-content').innerHTML = this._renderSection('licenses', userData.user);
+                    this._bindSectionEvents('licenses', userData.user);
                 }
             } catch (err) {
                 Toast.error(err.message || 'Connection failed.');
@@ -528,8 +545,8 @@ const DashboardView = {
                 const userData = await API.getUserData();
                 if (userData?.user) {
                     State.setUser(userData.user);
-                    document.getElementById('dash-content').innerHTML = this._renderSection('easytuner', userData.user);
-                    this._bindSectionEvents('easytuner', userData.user);
+                    document.getElementById('dash-content').innerHTML = this._renderSection('licenses', userData.user);
+                    this._bindSectionEvents('licenses', userData.user);
                 }
             } catch (err) {
                 Toast.error(err.message || 'Could not disconnect.');
