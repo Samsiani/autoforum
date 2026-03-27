@@ -2691,8 +2691,10 @@ class Admin_Panel {
             }
 
             $(document).on('click', '.af-btn-et-activate', function(){
-                if (!confirm('Activate Easy Tuner license for this user?')) return;
-                etAction($(this), 'activate');
+                var defaultDate = new Date(Date.now() + 365*24*60*60*1000).toISOString().slice(0,10);
+                var expiry = prompt('Set license expiry date (YYYY-MM-DD):', defaultDate);
+                if (expiry === null) return;
+                etAction($(this), 'activate', { expires_at: expiry });
             });
 
             $(document).on('click', '.af-btn-et-revoke', function(){
@@ -2948,7 +2950,10 @@ class Admin_Panel {
 
         switch ( $action ) {
             case 'activate':
-                $et_expires = $expires ? $expires . 'T23:59:59Z' : null;
+                // API requires an expiry date to activate — default to 1 year if none set.
+                $et_expires = $expires
+                    ? $expires . 'T23:59:59Z'
+                    : gmdate( 'Y-m-d\T23:59:59\Z', strtotime( '+1 year' ) );
                 $result     = $lm->et_admin_edit_license( $et_uid, true, $et_expires );
                 break;
             case 'revoke':
