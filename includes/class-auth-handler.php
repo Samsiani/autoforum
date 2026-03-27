@@ -278,10 +278,13 @@ class Auth_Handler {
             'licenses'    => $licenses,
             'needsAccountUpdate' => (bool) get_user_meta( $user_id, '_af_needs_account_update', true ),
             'easyTuner'   => [
-                'connected' => $et_connected,
-                'email'     => $et_connected ? esc_html( $et_email ) : null,
-                'userId'    => $et_user_id ? esc_html( $et_user_id ) : null,
-                'active'    => ! empty( $et_license['active'] ),
+                'connected'       => $et_connected,
+                'email'           => $et_connected ? esc_html( $et_email ) : null,
+                'userId'          => $et_user_id ? esc_html( $et_user_id ) : null,
+                'active'          => ! empty( $et_license['active'] ),
+                'deviceActivated' => ! empty( $et_license['device_activated'] ),
+                'expiresAt'       => $et_license['expires_at'] ?? null,
+                'filesEdited'     => (int) ( $et_license['files_edited'] ?? 0 ),
             ],
             'nonces'      => [
                 'logout'        => wp_create_nonce( 'af_logout' ),

@@ -1289,10 +1289,13 @@ class Forum_API {
         wp_send_json_success( [
             'message'   => __( 'Easy Tuner account connected!', 'autoforum' ),
             'easyTuner' => [
-                'connected' => true,
-                'email'     => esc_html( $et_email ),
-                'userId'    => esc_html( $result['user_id'] ?? '' ),
-                'active'    => ! empty( $result['active'] ),
+                'connected'       => true,
+                'email'           => esc_html( $et_email ),
+                'userId'          => esc_html( $result['user_id'] ?? '' ),
+                'active'          => ! empty( $result['active'] ),
+                'deviceActivated' => ! empty( $result['device_activated'] ),
+                'expiresAt'       => $result['expires_at'] ?? null,
+                'filesEdited'     => (int) ( $result['files_edited'] ?? 0 ),
             ],
         ] );
     }
@@ -1339,10 +1342,13 @@ class Forum_API {
 
         wp_send_json_success( [
             'easyTuner' => [
-                'connected' => ! empty( $et_email ),
-                'email'     => esc_html( $et_email ),
-                'userId'    => esc_html( $result['user_id'] ?? get_user_meta( $user_id, 'af_et_user_id', true ) ),
-                'active'    => ! empty( $result['active'] ),
+                'connected'       => ! empty( $et_email ),
+                'email'           => esc_html( $et_email ),
+                'userId'          => esc_html( $result['user_id'] ?? get_user_meta( $user_id, 'af_et_user_id', true ) ),
+                'active'          => ! empty( $result['active'] ),
+                'deviceActivated' => ! empty( $result['device_activated'] ),
+                'expiresAt'       => $result['expires_at'] ?? null,
+                'filesEdited'     => (int) ( $result['files_edited'] ?? 0 ),
             ],
         ] );
     }

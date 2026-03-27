@@ -593,37 +593,36 @@ class License_Manager {
             update_user_meta( $user_id, 'af_et_user_id', sanitize_text_field( $et_uid ) );
         }
 
-        // Step 2: Check license.
-        $lic_response = wp_remote_post( $api_url . '/User/HasLicense', [
-            'headers'   => [
-                'Authorization' => 'Bearer ' . $token,
-                'Content-Length' => '0',
-            ],
-            'body'      => '',
+        // Step 2: Get full user info (includes license, device, expiry).
+        $info_response = wp_remote_get( $api_url . '/User/GetMyUserInfo', [
+            'headers'   => [ 'Authorization' => 'Bearer ' . $token ],
             'timeout'   => 10,
             'sslverify' => false,
         ] );
 
-        if ( is_wp_error( $lic_response ) ) {
+        if ( is_wp_error( $info_response ) ) {
             return [ 'active' => false, 'user_id' => $et_uid, 'error' => 'api_error' ];
         }
 
-        $lic_code = wp_remote_retrieve_response_code( $lic_response );
-        $lic_raw  = wp_remote_retrieve_body( $lic_response );
+        $info_code = wp_remote_retrieve_response_code( $info_response );
+        $info      = json_decode( wp_remote_retrieve_body( $info_response ), true );
 
-        if ( 200 !== $lic_code ) {
+        if ( 200 !== $info_code || ! is_array( $info ) ) {
             return [ 'active' => false, 'user_id' => $et_uid, 'error' => 'api_error' ];
         }
 
-        // Response format: {"haslicense":true} or plain true/false.
-        $lic_json = json_decode( $lic_raw, true );
-        $has_license = is_array( $lic_json )
-            ? ! empty( $lic_json['haslicense'] )
-            : filter_var( trim( $lic_raw, '"' ), FILTER_VALIDATE_BOOLEAN );
+        $has_license = ! empty( $info['hasLicense'] );
+        $expires_raw = $info['licenseExpirationDate'] ?? null;
+        $expires_at  = ( $expires_raw && ! str_starts_with( $expires_raw, '0001' ) ) ? $expires_raw : null;
 
         $result = [
-            'active'  => $has_license,
-            'user_id' => $et_uid,
+            'active'              => $has_license,
+            'user_id'             => $info['userId'] ?? $et_uid,
+            'device_activated'    => ! empty( $info['isComputerActivated'] ),
+            'expires_at'          => $expires_at,
+            'files_edited'        => (int) ( $info['filesEdited'] ?? 0 ),
+            'files_edited_today'  => (int) ( $info['filesEditedToday'] ?? 0 ),
+            'registration_time'   => $info['registrationTime'] ?? null,
         ];
 
         // Cache for 1 hour. Don't cache failures above (they return early).

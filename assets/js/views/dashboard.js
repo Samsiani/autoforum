@@ -192,6 +192,14 @@ const DashboardView = {
         <span class="lic-lbl">User ID</span>
         <span class="lic-val mono">${et.userId || 'N/A'}</span>
       </div>
+      <div class="lic-row">
+        <span class="lic-lbl">Device</span>
+        <span class="lic-val">${et.deviceActivated ? '<span class="badge badge-active">Activated</span>' : '<span class="badge badge-pinned">Not Activated</span>'}</span>
+      </div>
+      ${et.expiresAt ? `<div class="lic-row">
+        <span class="lic-lbl">Expires</span>
+        <span class="lic-val">${new Date(et.expiresAt).toLocaleDateString()}</span>
+      </div>` : ''}
     </div>
     <div class="lic-footer">
       <button class="btn btn-secondary btn-sm" type="button" id="et-refresh-btn">
