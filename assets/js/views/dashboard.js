@@ -228,63 +228,6 @@ const DashboardView = {
 </div>`;
     },
 
-    _sectionEasyTuner(user) {
-        const et = user.easyTuner || {};
-        if (et.connected) {
-            return `
-<div class="dash-section">
-  <h2 class="dash-title"><i class="fa-solid fa-plug"></i> Easy Tuner Account</h2>
-  <div class="card">
-    <div class="card-header"><span class="card-title">Connected Account</span></div>
-    <div class="card-body">
-      <div class="lic-row">
-        <span class="lic-lbl">Email</span>
-        <span class="lic-val">${et.email}</span>
-      </div>
-      <div class="lic-row">
-        <span class="lic-lbl">User ID</span>
-        <span class="lic-val mono">${et.userId || 'N/A'}</span>
-      </div>
-      <div class="lic-row">
-        <span class="lic-lbl">License Status</span>
-        <span class="badge ${et.active ? 'badge-active' : 'badge-pinned'}" id="et-status-badge">${et.active ? 'Active' : 'Inactive'}</span>
-      </div>
-    </div>
-    <div class="lic-footer">
-      <button class="btn btn-secondary btn-sm" type="button" id="et-refresh-btn">
-        <i class="fa-solid fa-arrows-rotate"></i> Refresh Status
-      </button>
-      <button class="btn btn-secondary btn-sm dash-nav-item--danger" type="button" id="et-disconnect-btn">
-        <i class="fa-solid fa-plug-circle-xmark"></i> Disconnect
-      </button>
-    </div>
-  </div>
-</div>`;
-        }
-        return `
-<div class="dash-section">
-  <h2 class="dash-title"><i class="fa-solid fa-plug"></i> Easy Tuner Account</h2>
-  <div class="card">
-    <div class="card-header"><span class="card-title">Connect Your Easy Tuner Account</span></div>
-    <div class="card-body">
-      <p style="color:var(--text-muted);margin-bottom:1rem">Link your Easy Tuner account to activate your license on this forum.</p>
-      <div class="form-group">
-        <label class="form-label">Easy Tuner Email</label>
-        <input class="form-input" type="email" id="et-email" placeholder="your@email.com">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Easy Tuner Password</label>
-        <input class="form-input" type="password" id="et-password" placeholder="Your Easy Tuner password">
-      </div>
-      <button class="btn btn-primary" type="button" id="et-connect-btn">
-        <i class="fa-solid fa-plug"></i> Connect Account
-      </button>
-      <span id="et-connect-msg" style="margin-left:1rem;color:var(--text-muted)"></span>
-    </div>
-  </div>
-</div>`;
-    },
-
     _sectionPosts(user) {
         if (CONFIG.DEMO_MODE) {
             const mockPosts = [
