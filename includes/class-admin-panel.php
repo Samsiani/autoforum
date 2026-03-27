@@ -263,6 +263,25 @@ class Admin_Panel {
             'af_license',
             [ 'label_for' => 'af_woo_product_ids', 'key' => 'woo_product_ids' ]
         );
+
+        // ── Section: Easy Tuner Integration ────────────────────────────────────
+
+        add_settings_section(
+            'af_easytuner',
+            __( 'Easy Tuner Integration', 'autoforum' ),
+            '__return_false',
+            self::SETTINGS_SLUG
+        );
+
+        add_settings_field(
+            'et_api_url',
+            __( 'Easy Tuner API URL', 'autoforum' ),
+            [ $this, 'field_text' ],
+            self::SETTINGS_SLUG,
+            'af_easytuner',
+            [ 'label_for' => 'af_et_api_url', 'key' => 'et_api_url',
+              'description' => 'Base URL for the Easy Tuner license API (e.g. https://easytuner.net:8083)' ]
+        );
     }
 
     // ── Settings Sanitization ─────────────────────────────────────────────────
@@ -282,6 +301,7 @@ class Admin_Panel {
         $clean['license_duration']    = min( 3650, max( 1, absint( $input['license_duration'] ?? 365 ) ) );
         $clean['enable_rest_api']  = ! empty( $input['enable_rest_api'] );
         $clean['show_demo_data']   = ! empty( $input['show_demo_data'] );
+        $clean['et_api_url']       = esc_url_raw( trim( $input['et_api_url'] ?? 'https://easytuner.net:8083' ) );
 
         // Color — allow only valid hex codes. Cast to string first; sanitize_hex_color()
         // triggers a deprecation in PHP 8.1+ when passed null.
@@ -366,6 +386,22 @@ class Admin_Panel {
             esc_textarea( $value ),
             esc_html__( 'Enter one WooCommerce Product ID per line. Orders containing these products will automatically generate a license.', 'autoforum' )
         );
+    }
+
+    public function field_text( array $args ): void {
+        $settings = $this->get_settings();
+        $key      = $args['key'];
+        $desc     = $args['description'] ?? '';
+        printf(
+            '<input type="text" id="af_%s" name="%s[%s]" value="%s" class="regular-text">',
+            esc_attr( $key ),
+            esc_attr( self::OPTION_KEY ),
+            esc_attr( $key ),
+            esc_attr( $settings[ $key ] ?? '' )
+        );
+        if ( $desc ) {
+            printf( '<p class="description">%s</p>', esc_html( $desc ) );
+        }
     }
 
     public function field_checkbox( array $args ): void {

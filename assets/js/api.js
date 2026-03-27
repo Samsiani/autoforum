@@ -242,6 +242,24 @@ const API = ( () => {
         } );
     }
 
+    // ── Easy Tuner ────────────────────────────────────────────────────────────
+
+    async function etConnect( email, password ) {
+        return _ajax( 'af_et_connect', {
+            nonce:       _nonce( 'etConnect' ),
+            et_email:    email,
+            et_password: password,
+        } );
+    }
+
+    async function etDisconnect() {
+        return _ajax( 'af_et_disconnect', { nonce: _nonce( 'etDisconnect' ) } );
+    }
+
+    async function etCheck() {
+        return _ajax( 'af_et_check', { nonce: _nonce( 'etCheck' ) } );
+    }
+
     // ── Licenses (REST API) ────────────────────────────────────────────────────
 
     async function validateLicense( { key, hwid } ) {
@@ -320,6 +338,10 @@ const API = ( () => {
         deletePost,
         editPost,
         reportPost,
+        // Easy Tuner
+        etConnect,
+        etDisconnect,
+        etCheck,
         // Licenses
         validateLicense,
         getLicenseInfo,

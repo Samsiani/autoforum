@@ -150,6 +150,7 @@ final class Plugin {
             'woo_product_ids'     => [],    // WooCommerce product IDs that grant licenses
             'enable_rest_api'     => true,
             'show_demo_data'      => false, // When true the SPA displays hardcoded mock data.
+            'et_api_url'          => 'https://easytuner.net:8083', // Easy Tuner license API.
         ];
     }
 

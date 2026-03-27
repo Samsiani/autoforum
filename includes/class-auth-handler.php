@@ -255,6 +255,14 @@ class Auth_Handler {
                 : null,
         ], $lic_rows ?: [] );
 
+        // Easy Tuner account status.
+        $et_email     = get_user_meta( $user_id, 'af_et_email', true );
+        $et_user_id   = get_user_meta( $user_id, 'af_et_user_id', true );
+        $et_connected = ! empty( $et_email );
+        $et_license   = $et_connected
+            ? autoforum()->get_license_manager()->check_et_license( $user_id )
+            : [ 'active' => false, 'user_id' => null ];
+
         return [
             'id'          => $user_id,
             'username'    => esc_html( $user->user_login ),
@@ -268,11 +276,20 @@ class Auth_Handler {
             'signature'   => wp_kses_post( get_user_meta( $user_id, 'af_signature', true ) ),
             'joined'      => esc_html( wp_date( 'M Y', strtotime( $user->user_registered ) ) ),
             'licenses'    => $licenses,
+            'easyTuner'   => [
+                'connected' => $et_connected,
+                'email'     => $et_connected ? esc_html( $et_email ) : null,
+                'userId'    => $et_user_id ? esc_html( $et_user_id ) : null,
+                'active'    => ! empty( $et_license['active'] ),
+            ],
             'nonces'      => [
-                'logout'      => wp_create_nonce( 'af_logout' ),
-                'profile'     => wp_create_nonce( self::NONCE_PROFILE ),
-                'hwid_reset'  => License_Manager::hwid_nonce(),
-                'getUserData' => wp_create_nonce( 'af_get_user_data' ),
+                'logout'        => wp_create_nonce( 'af_logout' ),
+                'profile'       => wp_create_nonce( self::NONCE_PROFILE ),
+                'hwid_reset'    => License_Manager::hwid_nonce(),
+                'getUserData'   => wp_create_nonce( 'af_get_user_data' ),
+                'et_connect'    => wp_create_nonce( 'af_et_connect' ),
+                'et_disconnect' => wp_create_nonce( 'af_et_disconnect' ),
+                'et_check'      => wp_create_nonce( 'af_et_check' ),
             ],
         ];
     }
@@ -301,6 +318,9 @@ class Auth_Handler {
             'uploadAttachment' => wp_create_nonce( 'af_upload_attachment' ),
             'heartbeat'        => wp_create_nonce( 'af_heartbeat' ),
             'reportPost'       => wp_create_nonce( 'af_report_post' ),
+            'etConnect'        => wp_create_nonce( 'af_et_connect' ),
+            'etDisconnect'     => wp_create_nonce( 'af_et_disconnect' ),
+            'etCheck'          => wp_create_nonce( 'af_et_check' ),
         ];
     }
 

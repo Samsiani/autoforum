@@ -460,6 +460,7 @@ class License_Manager {
 
     /**
      * Returns true if the user has at least one active, non-expired license.
+     * Checks WooCommerce licenses first, then falls back to Easy Tuner API.
      * Used by Forum_API for premium content gating.
      */
     public function user_has_active_license( int $user_id ): bool {
@@ -469,7 +470,7 @@ class License_Manager {
         global $wpdb;
         $table = DB_Installer::licenses_table();
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table from DB_Installer, no user input in schema.
-        return (bool) $wpdb->get_var(
+        $woo_active = (bool) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT id FROM {$table}
                  WHERE user_id = %d
@@ -479,6 +480,149 @@ class License_Manager {
                 $user_id
             )
         );
+        if ( $woo_active ) {
+            return true;
+        }
+        // Fallback: check Easy Tuner external API.
+        $et = $this->check_et_license( $user_id );
+        return ! empty( $et['active'] );
+    }
+
+    // ── Easy Tuner Integration ────────────────────────────────────────────────
+
+    /**
+     * Save Easy Tuner credentials for a user. Password is AES-256-CBC encrypted.
+     */
+    public function save_et_credentials( int $user_id, string $email, string $password ): void {
+        $key    = wp_salt( 'auth' );
+        $iv     = random_bytes( 16 );
+        $cipher = openssl_encrypt( $password, 'aes-256-cbc', $key, 0, $iv );
+
+        update_user_meta( $user_id, 'af_et_email',        sanitize_email( $email ) );
+        update_user_meta( $user_id, 'af_et_password_enc', $cipher );
+        update_user_meta( $user_id, 'af_et_password_iv',  base64_encode( $iv ) );
+    }
+
+    /**
+     * Retrieve decrypted Easy Tuner credentials, or null if not connected.
+     */
+    public function get_et_credentials( int $user_id ): ?array {
+        $email  = get_user_meta( $user_id, 'af_et_email', true );
+        $cipher = get_user_meta( $user_id, 'af_et_password_enc', true );
+        $iv_b64 = get_user_meta( $user_id, 'af_et_password_iv', true );
+
+        if ( empty( $email ) || empty( $cipher ) || empty( $iv_b64 ) ) {
+            return null;
+        }
+
+        $key      = wp_salt( 'auth' );
+        $iv       = base64_decode( $iv_b64 );
+        $password = openssl_decrypt( $cipher, 'aes-256-cbc', $key, 0, $iv );
+
+        if ( false === $password ) {
+            return null;
+        }
+
+        return [ 'email' => $email, 'password' => $password ];
+    }
+
+    /**
+     * Remove all Easy Tuner data for a user.
+     */
+    public function delete_et_credentials( int $user_id ): void {
+        delete_user_meta( $user_id, 'af_et_email' );
+        delete_user_meta( $user_id, 'af_et_password_enc' );
+        delete_user_meta( $user_id, 'af_et_password_iv' );
+        delete_user_meta( $user_id, 'af_et_user_id' );
+        delete_transient( 'af_et_lic_' . $user_id );
+    }
+
+    /**
+     * Check Easy Tuner license status for a user via the external API.
+     * Caches the result for 1 hour to avoid excessive API calls.
+     *
+     * @return array{active: bool, user_id: ?string, error?: string}
+     */
+    public function check_et_license( int $user_id ): array {
+        $cache_key = 'af_et_lic_' . $user_id;
+        $cached    = get_transient( $cache_key );
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
+        $creds = $this->get_et_credentials( $user_id );
+        if ( ! $creds ) {
+            return [ 'active' => false, 'user_id' => null, 'error' => 'not_connected' ];
+        }
+
+        $settings = get_option( 'af_settings', Plugin::default_settings() );
+        $api_url  = rtrim( $settings['et_api_url'] ?? 'https://easytuner.net:8083', '/' );
+
+        // Step 1: Authenticate with Easy Tuner API.
+        $login_response = wp_remote_post( $api_url . '/User/Login', [
+            'headers'   => [ 'Content-Type' => 'application/json' ],
+            'body'      => wp_json_encode( [
+                'Email'    => $creds['email'],
+                'Password' => $creds['password'],
+            ] ),
+            'timeout'   => 10,
+            'sslverify' => false,
+        ] );
+
+        if ( is_wp_error( $login_response ) ) {
+            return [ 'active' => false, 'user_id' => null, 'error' => 'api_error' ];
+        }
+
+        $login_code = wp_remote_retrieve_response_code( $login_response );
+        $login_body = json_decode( wp_remote_retrieve_body( $login_response ), true );
+
+        if ( 200 !== $login_code || empty( $login_body['token'] ) ) {
+            return [ 'active' => false, 'user_id' => null, 'error' => 'auth_failed' ];
+        }
+
+        $token = $login_body['token'];
+
+        // Extract userId from JWT sub claim.
+        $jwt_parts = explode( '.', $token );
+        $et_uid    = null;
+        if ( count( $jwt_parts ) >= 2 ) {
+            $payload = json_decode( base64_decode( strtr( $jwt_parts[1], '-_', '+/' ) ), true );
+            $et_uid  = $payload['sub'] ?? null;
+        }
+        if ( $et_uid ) {
+            update_user_meta( $user_id, 'af_et_user_id', sanitize_text_field( $et_uid ) );
+        }
+
+        // Step 2: Check license.
+        $lic_response = wp_remote_post( $api_url . '/User/HasLicense', [
+            'headers'   => [ 'Authorization' => 'Bearer ' . $token ],
+            'timeout'   => 10,
+            'sslverify' => false,
+        ] );
+
+        if ( is_wp_error( $lic_response ) ) {
+            return [ 'active' => false, 'user_id' => $et_uid, 'error' => 'api_error' ];
+        }
+
+        $lic_code = wp_remote_retrieve_response_code( $lic_response );
+        $lic_raw  = wp_remote_retrieve_body( $lic_response );
+
+        if ( 200 !== $lic_code ) {
+            return [ 'active' => false, 'user_id' => $et_uid, 'error' => 'api_error' ];
+        }
+
+        // Response is expected to be true/false (plain text or JSON boolean).
+        $has_license = filter_var( trim( $lic_raw, '"' ), FILTER_VALIDATE_BOOLEAN );
+
+        $result = [
+            'active'  => $has_license,
+            'user_id' => $et_uid,
+        ];
+
+        // Cache for 1 hour. Don't cache failures above (they return early).
+        set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+
+        return $result;
     }
 
     // ── Database Helpers ──────────────────────────────────────────────────────

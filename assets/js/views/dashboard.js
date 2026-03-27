@@ -3,6 +3,7 @@ const DashboardView = {
     SECTIONS: [
         { id: 'overview',  icon: 'fa-gauge',             label: 'Overview' },
         { id: 'licenses',  icon: 'fa-key',               label: 'My Licenses' },
+        { id: 'easytuner', icon: 'fa-plug',              label: 'Easy Tuner' },
         { id: 'posts',     icon: 'fa-comment-dots',      label: 'My Posts' },
         { id: 'settings',  icon: 'fa-gear',              label: 'Settings' },
         { id: 'security',  icon: 'fa-shield-halved',     label: 'Security' }
@@ -105,6 +106,7 @@ const DashboardView = {
             case 'overview': return this._sectionOverview(user);
             case 'licenses': return this._sectionLicenses(user);
             case 'posts':    return this._sectionPosts(user);
+            case 'easytuner': return this._sectionEasyTuner(user);
             case 'settings': return this._sectionSettings(user);
             case 'security': return this._sectionSecurity(user);
             default: return this._sectionOverview(user);
@@ -206,6 +208,63 @@ const DashboardView = {
       <span class="hwid-warning" id="hwid-warning-${lic.id}"></span>
     </div>
   </div>`).join('')}
+</div>`;
+    },
+
+    _sectionEasyTuner(user) {
+        const et = user.easyTuner || {};
+        if (et.connected) {
+            return `
+<div class="dash-section">
+  <h2 class="dash-title"><i class="fa-solid fa-plug"></i> Easy Tuner Account</h2>
+  <div class="card">
+    <div class="card-header"><span class="card-title">Connected Account</span></div>
+    <div class="card-body">
+      <div class="lic-row">
+        <span class="lic-lbl">Email</span>
+        <span class="lic-val">${et.email}</span>
+      </div>
+      <div class="lic-row">
+        <span class="lic-lbl">User ID</span>
+        <span class="lic-val mono">${et.userId || 'N/A'}</span>
+      </div>
+      <div class="lic-row">
+        <span class="lic-lbl">License Status</span>
+        <span class="badge ${et.active ? 'badge-active' : 'badge-pinned'}" id="et-status-badge">${et.active ? 'Active' : 'Inactive'}</span>
+      </div>
+    </div>
+    <div class="lic-footer">
+      <button class="btn btn-secondary btn-sm" type="button" id="et-refresh-btn">
+        <i class="fa-solid fa-arrows-rotate"></i> Refresh Status
+      </button>
+      <button class="btn btn-secondary btn-sm dash-nav-item--danger" type="button" id="et-disconnect-btn">
+        <i class="fa-solid fa-plug-circle-xmark"></i> Disconnect
+      </button>
+    </div>
+  </div>
+</div>`;
+        }
+        return `
+<div class="dash-section">
+  <h2 class="dash-title"><i class="fa-solid fa-plug"></i> Easy Tuner Account</h2>
+  <div class="card">
+    <div class="card-header"><span class="card-title">Connect Your Easy Tuner Account</span></div>
+    <div class="card-body">
+      <p style="color:var(--text-muted);margin-bottom:1rem">Link your Easy Tuner account to activate your license on this forum.</p>
+      <div class="form-group">
+        <label class="form-label">Easy Tuner Email</label>
+        <input class="form-input" type="email" id="et-email" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Easy Tuner Password</label>
+        <input class="form-input" type="password" id="et-password" placeholder="Your Easy Tuner password">
+      </div>
+      <button class="btn btn-primary" type="button" id="et-connect-btn">
+        <i class="fa-solid fa-plug"></i> Connect Account
+      </button>
+      <span id="et-connect-msg" style="margin-left:1rem;color:var(--text-muted)"></span>
+    </div>
+  </div>
 </div>`;
     },
 
@@ -424,6 +483,82 @@ const DashboardView = {
                     btn.disabled = false;
                 }
             });
+        });
+
+        // Easy Tuner connect
+        document.getElementById('et-connect-btn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('et-connect-btn');
+            const msg = document.getElementById('et-connect-msg');
+            const email = document.getElementById('et-email')?.value?.trim();
+            const pw    = document.getElementById('et-password')?.value;
+            if (!email || !pw) {
+                if (msg) msg.textContent = 'Please fill in both fields.';
+                return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting...';
+            if (msg) msg.textContent = '';
+            try {
+                const res = await API.etConnect(email, pw);
+                Toast.success(res.message || 'Easy Tuner account connected!');
+                // Refresh user data and re-render section.
+                const userData = await API.getUserData();
+                if (userData?.user) {
+                    State.setUser(userData.user);
+                    document.getElementById('dash-content').innerHTML = this._renderSection('easytuner', userData.user);
+                    this._bindSectionEvents('easytuner', userData.user);
+                }
+            } catch (err) {
+                Toast.error(err.message || 'Connection failed.');
+                if (msg) msg.textContent = err.message || 'Connection failed.';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-plug"></i> Connect Account';
+            }
+        });
+
+        // Easy Tuner disconnect
+        document.getElementById('et-disconnect-btn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('et-disconnect-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Disconnecting...';
+            try {
+                await API.etDisconnect();
+                Toast.info('Easy Tuner account disconnected.');
+                const userData = await API.getUserData();
+                if (userData?.user) {
+                    State.setUser(userData.user);
+                    document.getElementById('dash-content').innerHTML = this._renderSection('easytuner', userData.user);
+                    this._bindSectionEvents('easytuner', userData.user);
+                }
+            } catch (err) {
+                Toast.error(err.message || 'Could not disconnect.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-plug-circle-xmark"></i> Disconnect';
+            }
+        });
+
+        // Easy Tuner refresh
+        document.getElementById('et-refresh-btn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('et-refresh-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+            try {
+                const res = await API.etCheck();
+                const et = res.easyTuner || {};
+                const badge = document.getElementById('et-status-badge');
+                if (badge) {
+                    badge.textContent = et.active ? 'Active' : 'Inactive';
+                    badge.className = `badge ${et.active ? 'badge-active' : 'badge-pinned'}`;
+                }
+                Toast.success('License status refreshed.');
+            } catch (err) {
+                Toast.error(err.message || 'Could not check license status.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Refresh Status';
+            }
         });
 
         // posts section links

@@ -33,6 +33,9 @@ class Forum_API {
     private const NONCE_POSTS        = 'af_get_posts';
     private const NONCE_HOME_STATS   = 'af_get_home_stats';
     private const NONCE_USER_PROFILE = 'af_get_user_profile';
+    private const NONCE_ET_CONNECT    = 'af_et_connect';
+    private const NONCE_ET_DISCONNECT = 'af_et_disconnect';
+    private const NONCE_ET_CHECK      = 'af_et_check';
     private const ALLOWED_TAGS  = [
         'p'          => [],
         'br'         => [],
@@ -93,6 +96,10 @@ class Forum_API {
         add_action( 'wp_ajax_af_delete_post',           [ $this, 'ajax_delete_post' ] );
         add_action( 'wp_ajax_af_edit_post',              [ $this, 'ajax_edit_post' ] );
         add_action( 'wp_ajax_af_upload_attachment',     [ $this, 'ajax_upload_attachment' ] );
+        // Easy Tuner integration.
+        add_action( 'wp_ajax_af_et_connect',              [ $this, 'ajax_et_connect' ] );
+        add_action( 'wp_ajax_af_et_disconnect',           [ $this, 'ajax_et_disconnect' ] );
+        add_action( 'wp_ajax_af_et_check',                [ $this, 'ajax_et_check' ] );
     }
 
     // ── Read: Categories ─────────────────────────────────────────────────────
@@ -1184,6 +1191,119 @@ class Forum_API {
             'location'   => $location,
             'signature'  => $signature,
             'licenses'   => $licenses,
+        ] );
+    }
+
+    // ── Easy Tuner: Connect / Disconnect / Check ────────────────────────────
+
+    /**
+     * Connect the current user's Easy Tuner account.
+     * Authenticates against the ET API, saves credentials, checks license.
+     */
+    public function ajax_et_connect(): void {
+        check_ajax_referer( self::NONCE_ET_CONNECT, 'nonce' );
+
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'autoforum' ) ], 401 );
+        }
+
+        $user_id = get_current_user_id();
+
+        // Rate-limit: 5 attempts per hour.
+        $rl_key = 'af_rl_et_connect_' . $user_id;
+        if ( Utils::is_rate_limited( $rl_key, 5, HOUR_IN_SECONDS ) ) {
+            wp_send_json_error( [
+                'message' => __( 'Too many attempts. Please try again later.', 'autoforum' ),
+                'code'    => 'rate_limited',
+            ], 429 );
+        }
+        Utils::increment_rate_limit( $rl_key, HOUR_IN_SECONDS );
+
+        $et_email    = sanitize_text_field( wp_unslash( $_POST['et_email'] ?? '' ) );
+        $et_password = $_POST['et_password'] ?? '';
+
+        if ( empty( $et_email ) || empty( $et_password ) ) {
+            wp_send_json_error( [ 'message' => __( 'Email and password are required.', 'autoforum' ) ] );
+        }
+
+        // Save credentials first, then run the check (which authenticates).
+        $lm = autoforum()->get_license_manager();
+        $lm->save_et_credentials( $user_id, $et_email, $et_password );
+
+        // Clear any cached result so check_et_license hits the API.
+        delete_transient( 'af_et_lic_' . $user_id );
+
+        $result = $lm->check_et_license( $user_id );
+
+        // If auth failed, remove saved credentials.
+        if ( ! empty( $result['error'] ) && 'auth_failed' === $result['error'] ) {
+            $lm->delete_et_credentials( $user_id );
+            wp_send_json_error( [ 'message' => __( 'Invalid Easy Tuner credentials.', 'autoforum' ) ] );
+        }
+
+        if ( ! empty( $result['error'] ) && 'api_error' === $result['error'] ) {
+            $lm->delete_et_credentials( $user_id );
+            wp_send_json_error( [ 'message' => __( 'Could not connect to Easy Tuner. Please try again later.', 'autoforum' ) ] );
+        }
+
+        wp_send_json_success( [
+            'message'   => __( 'Easy Tuner account connected!', 'autoforum' ),
+            'easyTuner' => [
+                'connected' => true,
+                'email'     => esc_html( $et_email ),
+                'userId'    => esc_html( $result['user_id'] ?? '' ),
+                'active'    => ! empty( $result['active'] ),
+            ],
+        ] );
+    }
+
+    /**
+     * Disconnect the current user's Easy Tuner account.
+     */
+    public function ajax_et_disconnect(): void {
+        check_ajax_referer( self::NONCE_ET_DISCONNECT, 'nonce' );
+
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'autoforum' ) ], 401 );
+        }
+
+        autoforum()->get_license_manager()->delete_et_credentials( get_current_user_id() );
+
+        wp_send_json_success( [
+            'message'   => __( 'Easy Tuner account disconnected.', 'autoforum' ),
+            'easyTuner' => [
+                'connected' => false,
+                'email'     => null,
+                'userId'    => null,
+                'active'    => false,
+            ],
+        ] );
+    }
+
+    /**
+     * Re-check Easy Tuner license status for the current user.
+     */
+    public function ajax_et_check(): void {
+        check_ajax_referer( self::NONCE_ET_CHECK, 'nonce' );
+
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'autoforum' ) ], 401 );
+        }
+
+        $user_id = get_current_user_id();
+        // Clear cache to force a fresh check.
+        delete_transient( 'af_et_lic_' . $user_id );
+
+        $result   = autoforum()->get_license_manager()->check_et_license( $user_id );
+        $et_email = get_user_meta( $user_id, 'af_et_email', true );
+
+        wp_send_json_success( [
+            'easyTuner' => [
+                'connected' => ! empty( $et_email ),
+                'email'     => esc_html( $et_email ),
+                'userId'    => esc_html( $result['user_id'] ?? get_user_meta( $user_id, 'af_et_user_id', true ) ),
+                'active'    => ! empty( $result['active'] ),
+            ],
         ] );
     }
 

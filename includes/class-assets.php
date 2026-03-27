@@ -161,6 +161,9 @@ class Assets {
                 'editPost'       => wp_create_nonce( 'af_edit_post' ),
                 'uploadAttachment' => wp_create_nonce( 'af_upload_attachment' ),
                 'heartbeat'        => wp_create_nonce( 'af_heartbeat' ),
+                'etConnect'        => wp_create_nonce( 'af_et_connect' ),
+                'etDisconnect'     => wp_create_nonce( 'af_et_disconnect' ),
+                'etCheck'          => wp_create_nonce( 'af_et_check' ),
             ],
             'settings'    => [
                 'primaryColor'   => esc_attr( $settings['primary_color']   ?? '#3b82f6' ),
