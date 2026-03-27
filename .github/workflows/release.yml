@@ -75,13 +75,13 @@ jobs:
           git push origin "v${{ steps.next.outputs.version }}"
 
       # ── Build deployable plugin zip ───────────────────────────────────────
-      # The zip must contain a single top-level folder named "autoforum" so
-      # WordPress can unpack it correctly.  vendor/ is included; .git and
-      # .github are excluded so they don't bloat the download.
+      # The zip must contain a single top-level folder named "autoforum-main"
+      # to match the installed plugin directory on production.  vendor/ is
+      # included; .git and .github are excluded.
 
       - name: Build plugin zip
         run: |
-          SLUG="autoforum"
+          SLUG="autoforum-main"
           mkdir -p /tmp/build/${SLUG}
           rsync -r \
             --exclude='.git' \
