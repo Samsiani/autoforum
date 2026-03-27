@@ -46,6 +46,7 @@ class Admin_Panel {
         add_action( 'wp_ajax_af_force_hwid_reset',    [ $this, 'ajax_force_hwid_reset' ] );
         add_action( 'wp_ajax_af_revoke_license',      [ $this, 'ajax_revoke_license' ] );
         add_action( 'wp_ajax_af_add_license',         [ $this, 'ajax_add_license' ] );
+        add_action( 'wp_ajax_af_et_admin_edit',      [ $this, 'ajax_et_admin_edit' ] );
         add_action( 'wp_ajax_af_edit_license',        [ $this, 'ajax_edit_license' ] );
         add_action( 'wp_ajax_af_delete_license',      [ $this, 'ajax_delete_license' ] );
         add_action( 'wp_ajax_af_lic_user_search',     [ $this, 'ajax_lic_user_search' ] );
@@ -2355,29 +2356,33 @@ class Admin_Panel {
             <!-- ── Easy Tuner Connected Accounts ──────────────────────────────── -->
             <?php
             $et_users = get_users( [
-                'meta_key'   => 'af_et_email',
+                'meta_key'     => 'af_et_email',
                 'meta_compare' => 'EXISTS',
-                'fields'     => [ 'ID', 'user_login', 'display_name' ],
+                'fields'       => [ 'ID', 'user_login', 'display_name' ],
             ] );
+            $nonce_et_edit = wp_create_nonce( 'af_et_admin_edit' );
             ?>
             <h2 style="margin-top:2rem;">
                 <span class="dashicons dashicons-admin-plugins"></span>
                 <?php esc_html_e( 'Easy Tuner Licenses', 'autoforum' ); ?>
             </h2>
-            <table class="wp-list-table widefat fixed striped" style="margin-top:.5rem">
+            <table class="wp-list-table widefat fixed striped" style="margin-top:.5rem" id="af-et-licenses-table">
                 <thead>
                     <tr>
                         <th style="width:42px"><?php esc_html_e( 'WP ID', 'autoforum' ); ?></th>
                         <th><?php esc_html_e( 'User', 'autoforum' ); ?></th>
                         <th><?php esc_html_e( 'ET Email', 'autoforum' ); ?></th>
                         <th><?php esc_html_e( 'ET User ID', 'autoforum' ); ?></th>
+                        <th><?php esc_html_e( 'Device', 'autoforum' ); ?></th>
+                        <th><?php esc_html_e( 'Expires', 'autoforum' ); ?></th>
                         <th style="width:80px"><?php esc_html_e( 'Status', 'autoforum' ); ?></th>
+                        <th><?php esc_html_e( 'Actions', 'autoforum' ); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php if ( empty( $et_users ) ) : ?>
                     <tr>
-                        <td colspan="5" style="text-align:center;padding:2rem;">
+                        <td colspan="8" style="text-align:center;padding:2rem;">
                             <?php esc_html_e( 'No users have connected their Easy Tuner account.', 'autoforum' ); ?>
                         </td>
                     </tr>
@@ -2385,11 +2390,14 @@ class Admin_Panel {
                     <?php foreach ( $et_users as $eu ) :
                         $eu_id     = (int) $eu->ID;
                         $et_email  = esc_html( get_user_meta( $eu_id, 'af_et_email', true ) );
-                        $et_uid    = esc_html( get_user_meta( $eu_id, 'af_et_user_id', true ) );
+                        $et_uid    = get_user_meta( $eu_id, 'af_et_user_id', true );
                         $et_result = autoforum()->get_license_manager()->check_et_license( $eu_id );
                         $et_active = ! empty( $et_result['active'] );
+                        $et_device = ! empty( $et_result['device_activated'] );
+                        $et_exp    = $et_result['expires_at'] ?? null;
+                        $et_exp_date = $et_exp ? substr( $et_exp, 0, 10 ) : '';
                     ?>
-                        <tr>
+                        <tr id="af-et-row-<?php echo $eu_id; ?>">
                             <td><?php echo $eu_id; ?></td>
                             <td>
                                 <a href="<?php echo esc_url( get_edit_user_link( $eu_id ) ); ?>">
@@ -2397,11 +2405,46 @@ class Admin_Panel {
                                 </a>
                             </td>
                             <td><?php echo $et_email; ?></td>
-                            <td><code style="font-size:.78em"><?php echo $et_uid ?: '—'; ?></code></td>
+                            <td><code style="font-size:.78em"><?php echo esc_html( $et_uid ?: '—' ); ?></code></td>
                             <td>
-                                <span class="af-badge <?php echo $et_active ? 'af-badge-active' : 'af-badge-muted'; ?>">
-                                    <?php echo $et_active ? esc_html__( 'Active', 'autoforum' ) : esc_html__( 'Inactive', 'autoforum' ); ?>
+                                <span class="af-badge <?php echo $et_device ? 'af-badge-active' : 'af-badge-muted'; ?>">
+                                    <?php echo $et_device ? 'Yes' : 'No'; ?>
                                 </span>
+                            </td>
+                            <td class="af-et-expires"><?php echo $et_exp_date ? esc_html( wp_date( get_option( 'date_format' ), strtotime( $et_exp_date ) ) ) : '—'; ?></td>
+                            <td>
+                                <span class="af-badge <?php echo $et_active ? 'af-badge-active' : 'af-badge-muted'; ?> af-et-status">
+                                    <?php echo $et_active ? 'Active' : 'Inactive'; ?>
+                                </span>
+                            </td>
+                            <td class="af-action-cell">
+                                <?php if ( $et_uid ) : ?>
+                                    <?php if ( $et_active ) : ?>
+                                        <button type="button" class="button button-small af-btn-et-revoke"
+                                            data-wp-id="<?php echo $eu_id; ?>"
+                                            data-et-uid="<?php echo esc_attr( $et_uid ); ?>"
+                                            data-nonce="<?php echo esc_attr( $nonce_et_edit ); ?>"
+                                            style="color:#c0392b;">
+                                            <?php esc_html_e( 'Revoke', 'autoforum' ); ?>
+                                        </button>
+                                    <?php else : ?>
+                                        <button type="button" class="button button-small af-btn-et-activate"
+                                            data-wp-id="<?php echo $eu_id; ?>"
+                                            data-et-uid="<?php echo esc_attr( $et_uid ); ?>"
+                                            data-nonce="<?php echo esc_attr( $nonce_et_edit ); ?>">
+                                            <?php esc_html_e( 'Activate', 'autoforum' ); ?>
+                                        </button>
+                                    <?php endif; ?>
+                                    <button type="button" class="button button-small af-btn-et-set-expiry"
+                                        data-wp-id="<?php echo $eu_id; ?>"
+                                        data-et-uid="<?php echo esc_attr( $et_uid ); ?>"
+                                        data-expires="<?php echo esc_attr( $et_exp_date ); ?>"
+                                        data-nonce="<?php echo esc_attr( $nonce_et_edit ); ?>">
+                                        <?php esc_html_e( 'Set Expiry', 'autoforum' ); ?>
+                                    </button>
+                                <?php else : ?>
+                                    <span style="color:#999"><?php esc_html_e( 'No ET ID', 'autoforum' ); ?></span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -2624,6 +2667,46 @@ class Admin_Panel {
                     }
                 });
             });
+
+            // ── Easy Tuner license actions ────────────────────────────────────
+            function etAction($btn, action, extraData) {
+                $btn.prop('disabled', true).text('...');
+                $.post(ajaxUrl, $.extend({
+                    action:     'af_et_admin_edit',
+                    nonce:      $btn.data('nonce'),
+                    wp_user_id: $btn.data('wp-id'),
+                    et_user_id: $btn.data('et-uid'),
+                    et_action:  action,
+                }, extraData || {}), function(res){
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert(res.data?.message || res.data || 'Error.');
+                        $btn.prop('disabled', false).text(action === 'revoke' ? 'Revoke' : 'Activate');
+                    }
+                }).fail(function(){
+                    alert('Request failed.');
+                    $btn.prop('disabled', false).text(action === 'revoke' ? 'Revoke' : 'Activate');
+                });
+            }
+
+            $(document).on('click', '.af-btn-et-activate', function(){
+                if (!confirm('Activate Easy Tuner license for this user?')) return;
+                etAction($(this), 'activate');
+            });
+
+            $(document).on('click', '.af-btn-et-revoke', function(){
+                if (!confirm('Revoke Easy Tuner license for this user?')) return;
+                etAction($(this), 'revoke');
+            });
+
+            $(document).on('click', '.af-btn-et-set-expiry', function(){
+                var $btn = $(this);
+                var current = $btn.data('expires') || '';
+                var newDate = prompt('Set license expiry date (YYYY-MM-DD):', current);
+                if (newDate === null) return;
+                etAction($btn, 'set_expiry', { expires_at: newDate });
+            });
         });
         </script>
         <?php
@@ -2841,6 +2924,54 @@ class Admin_Panel {
 
         // Clear cached ET license status for this user.
         delete_transient( 'af_et_lic_' . $wp_user_id );
+    }
+
+    /**
+     * AJAX: Admin edits an Easy Tuner license (activate/revoke/set expiry).
+     */
+    public function ajax_et_admin_edit(): void {
+        check_ajax_referer( 'af_et_admin_edit', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( __( 'Insufficient permissions.', 'autoforum' ) );
+        }
+
+        $wp_user_id = absint( $_POST['wp_user_id'] ?? 0 );
+        $et_uid     = sanitize_text_field( $_POST['et_user_id'] ?? '' );
+        $action     = sanitize_text_field( $_POST['et_action'] ?? '' );
+        $expires    = sanitize_text_field( $_POST['expires_at'] ?? '' );
+
+        if ( ! $et_uid ) {
+            wp_send_json_error( __( 'Missing Easy Tuner user ID.', 'autoforum' ) );
+        }
+
+        $lm = autoforum()->get_license_manager();
+
+        switch ( $action ) {
+            case 'activate':
+                $et_expires = $expires ? $expires . 'T23:59:59Z' : null;
+                $result     = $lm->et_admin_edit_license( $et_uid, true, $et_expires );
+                break;
+            case 'revoke':
+                $result = $lm->et_admin_edit_license( $et_uid, false, null );
+                break;
+            case 'set_expiry':
+                $et_expires = $expires ? $expires . 'T23:59:59Z' : null;
+                $result     = $lm->et_admin_edit_license( $et_uid, true, $et_expires );
+                break;
+            default:
+                wp_send_json_error( __( 'Invalid action.', 'autoforum' ) );
+        }
+
+        if ( true !== $result ) {
+            wp_send_json_error( $result ?: __( 'API error.', 'autoforum' ) );
+        }
+
+        // Clear cached ET license for this user.
+        if ( $wp_user_id ) {
+            delete_transient( 'af_et_lic_' . $wp_user_id );
+        }
+
+        wp_send_json_success( [ 'message' => __( 'License updated on Easy Tuner.', 'autoforum' ) ] );
     }
 
     public function ajax_lic_user_search(): void {
