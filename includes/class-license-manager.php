@@ -595,7 +595,11 @@ class License_Manager {
 
         // Step 2: Check license.
         $lic_response = wp_remote_post( $api_url . '/User/HasLicense', [
-            'headers'   => [ 'Authorization' => 'Bearer ' . $token ],
+            'headers'   => [
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Length' => '0',
+            ],
+            'body'      => '',
             'timeout'   => 10,
             'sslverify' => false,
         ] );
@@ -611,8 +615,11 @@ class License_Manager {
             return [ 'active' => false, 'user_id' => $et_uid, 'error' => 'api_error' ];
         }
 
-        // Response is expected to be true/false (plain text or JSON boolean).
-        $has_license = filter_var( trim( $lic_raw, '"' ), FILTER_VALIDATE_BOOLEAN );
+        // Response format: {"haslicense":true} or plain true/false.
+        $lic_json = json_decode( $lic_raw, true );
+        $has_license = is_array( $lic_json )
+            ? ! empty( $lic_json['haslicense'] )
+            : filter_var( trim( $lic_raw, '"' ), FILTER_VALIDATE_BOOLEAN );
 
         $result = [
             'active'  => $has_license,
