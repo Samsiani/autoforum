@@ -13,10 +13,9 @@ defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 global $wpdb;
 
-// Honour "keep data" setting — abort early if admin chose to preserve plugin data.
-if ( get_option( 'af_keep_data_on_uninstall' ) ) {
-    return;
-}
+// ALWAYS keep data on uninstall — never drop tables automatically.
+// Data can only be removed manually via the database.
+return;
 
 // Drop custom tables.
 $tables = [
