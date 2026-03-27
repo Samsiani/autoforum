@@ -631,6 +631,97 @@ class License_Manager {
         return $result;
     }
 
+    // ── Easy Tuner Admin API ─────────────────────────────────────────────────
+
+    /**
+     * Get an admin token for the ET API.
+     * Uses the configured admin ET credentials from af_settings.
+     *
+     * @return string|\WP_Error Token on success, WP_Error on failure.
+     */
+    public function get_et_admin_token(): string|\WP_Error {
+        $cached = get_transient( 'af_et_admin_token' );
+        if ( $cached ) {
+            return $cached;
+        }
+
+        $settings = get_option( 'af_settings', Plugin::default_settings() );
+        $api_url  = rtrim( $settings['et_api_url'] ?? 'https://easytuner.net:8083', '/' );
+        $email    = $settings['et_admin_email'] ?? '';
+        $password = $settings['et_admin_password'] ?? '';
+
+        if ( empty( $email ) || empty( $password ) ) {
+            return new \WP_Error( 'missing_creds', 'Easy Tuner admin credentials not configured.' );
+        }
+
+        $response = wp_remote_post( $api_url . '/User/Login', [
+            'headers'   => [ 'Content-Type' => 'application/json' ],
+            'body'      => wp_json_encode( [ 'Email' => $email, 'Password' => $password ] ),
+            'timeout'   => 10,
+            'sslverify' => false,
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            return $response;
+        }
+
+        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        if ( 200 !== wp_remote_retrieve_response_code( $response ) || empty( $body['token'] ) ) {
+            return new \WP_Error( 'auth_failed', 'Easy Tuner admin login failed.' );
+        }
+
+        // Cache token for 30 minutes.
+        set_transient( 'af_et_admin_token', $body['token'], 30 * MINUTE_IN_SECONDS );
+        return $body['token'];
+    }
+
+    /**
+     * Set license status on the Easy Tuner API via Admin/EditLicense.
+     *
+     * @param string      $et_user_id  Easy Tuner userId (GUID).
+     * @param bool        $active      true = grant license, false = revoke.
+     * @param string|null $expires_at  ISO 8601 expiry date, or null for no expiry.
+     * @return bool|string True on success, error message on failure.
+     */
+    public function et_admin_edit_license( string $et_user_id, bool $active, ?string $expires_at = null ): bool|string {
+        $token = $this->get_et_admin_token();
+        if ( is_wp_error( $token ) ) {
+            return $token->get_error_message();
+        }
+
+        $settings = get_option( 'af_settings', Plugin::default_settings() );
+        $api_url  = rtrim( $settings['et_api_url'] ?? 'https://easytuner.net:8083', '/' );
+
+        $body = [
+            'userId'     => $et_user_id,
+            'hasLicense'  => $active,
+        ];
+        if ( $expires_at ) {
+            $body['licenseExpirationDate'] = $expires_at;
+        }
+
+        $response = wp_remote_post( $api_url . '/api/Admin/EditLicense', [
+            'headers'   => [
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type'  => 'application/json',
+            ],
+            'body'      => wp_json_encode( $body ),
+            'timeout'   => 10,
+            'sslverify' => false,
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            return $response->get_error_message();
+        }
+
+        $code = wp_remote_retrieve_response_code( $response );
+        if ( $code < 200 || $code >= 300 ) {
+            return 'Easy Tuner API returned HTTP ' . $code;
+        }
+
+        return true;
+    }
+
     // ── Database Helpers ──────────────────────────────────────────────────────
 
     /**

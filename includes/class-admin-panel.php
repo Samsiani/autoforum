@@ -282,6 +282,26 @@ class Admin_Panel {
             [ 'label_for' => 'af_et_api_url', 'key' => 'et_api_url',
               'description' => 'Base URL for the Easy Tuner license API (e.g. https://easytuner.net:8083)' ]
         );
+
+        add_settings_field(
+            'et_admin_email',
+            __( 'ET Admin Email', 'autoforum' ),
+            [ $this, 'field_text' ],
+            self::SETTINGS_SLUG,
+            'af_easytuner',
+            [ 'label_for' => 'af_et_admin_email', 'key' => 'et_admin_email',
+              'description' => 'Admin account email for managing licenses via the ET API.' ]
+        );
+
+        add_settings_field(
+            'et_admin_password',
+            __( 'ET Admin Password', 'autoforum' ),
+            [ $this, 'field_password' ],
+            self::SETTINGS_SLUG,
+            'af_easytuner',
+            [ 'label_for' => 'af_et_admin_password', 'key' => 'et_admin_password',
+              'description' => 'Admin account password.' ]
+        );
     }
 
     // ── Settings Sanitization ─────────────────────────────────────────────────
@@ -302,6 +322,8 @@ class Admin_Panel {
         $clean['enable_rest_api']  = ! empty( $input['enable_rest_api'] );
         $clean['show_demo_data']   = ! empty( $input['show_demo_data'] );
         $clean['et_api_url']       = esc_url_raw( trim( $input['et_api_url'] ?? 'https://easytuner.net:8083' ) );
+        $clean['et_admin_email']   = sanitize_text_field( $input['et_admin_email'] ?? '' );
+        $clean['et_admin_password'] = $input['et_admin_password'] ?? '';
 
         // Color — allow only valid hex codes. Cast to string first; sanitize_hex_color()
         // triggers a deprecation in PHP 8.1+ when passed null.
@@ -398,6 +420,23 @@ class Admin_Panel {
             esc_attr( self::OPTION_KEY ),
             esc_attr( $key ),
             esc_attr( $settings[ $key ] ?? '' )
+        );
+        if ( $desc ) {
+            printf( '<p class="description">%s</p>', esc_html( $desc ) );
+        }
+    }
+
+    public function field_password( array $args ): void {
+        $settings = $this->get_settings();
+        $key      = $args['key'];
+        $desc     = $args['description'] ?? '';
+        $value    = $settings[ $key ] ?? '';
+        printf(
+            '<input type="password" id="af_%s" name="%s[%s]" value="%s" class="regular-text" autocomplete="off">',
+            esc_attr( $key ),
+            esc_attr( self::OPTION_KEY ),
+            esc_attr( $key ),
+            esc_attr( $value )
         );
         if ( $desc ) {
             printf( '<p class="description">%s</p>', esc_html( $desc ) );
@@ -2695,6 +2734,9 @@ class Admin_Panel {
             wp_send_json_error( __( 'Database error — could not insert license.', 'autoforum' ) );
         }
 
+        // Sync to Easy Tuner API if user has an ET account.
+        $this->sync_et_license( $user_id, 'active' === $status, $expires_at );
+
         wp_send_json_success( [ 'license_id' => $wpdb->insert_id, 'license_key' => $key ] );
     }
 
@@ -2734,6 +2776,9 @@ class Admin_Panel {
             wp_send_json_error( __( 'Database error.', 'autoforum' ) );
         }
 
+        // Sync to Easy Tuner API.
+        $this->sync_et_license( $user_id, 'active' === $status, $expires_at );
+
         wp_send_json_success();
     }
 
@@ -2749,11 +2794,53 @@ class Admin_Panel {
         }
 
         global $wpdb;
-        $result = $wpdb->delete( DB_Installer::licenses_table(), [ 'id' => $license_id ], [ '%d' ] );
+        $table = DB_Installer::licenses_table();
 
-        false !== $result
-            ? wp_send_json_success()
-            : wp_send_json_error( __( 'Database error.', 'autoforum' ) );
+        // Get user_id before deleting so we can revoke on ET.
+        $lic_user_id = (int) $wpdb->get_var(
+            $wpdb->prepare( "SELECT user_id FROM {$table} WHERE id = %d", $license_id )
+        );
+
+        $result = $wpdb->delete( $table, [ 'id' => $license_id ], [ '%d' ] );
+
+        if ( false === $result ) {
+            wp_send_json_error( __( 'Database error.', 'autoforum' ) );
+        }
+
+        // Revoke on Easy Tuner API.
+        if ( $lic_user_id ) {
+            $this->sync_et_license( $lic_user_id, false, null );
+        }
+
+        wp_send_json_success();
+    }
+
+    /**
+     * Sync license status to the Easy Tuner API.
+     * Silently fails if ET credentials are not configured or user has no ET account.
+     */
+    private function sync_et_license( int $wp_user_id, bool $active, ?string $expires_at ): void {
+        if ( ! $wp_user_id ) {
+            return;
+        }
+
+        $et_user_id = get_user_meta( $wp_user_id, 'af_et_user_id', true );
+        if ( empty( $et_user_id ) ) {
+            return; // User hasn't connected their ET account.
+        }
+
+        $et_expires = null;
+        if ( $expires_at ) {
+            $ts = strtotime( $expires_at );
+            if ( $ts ) {
+                $et_expires = gmdate( 'Y-m-d\TH:i:s\Z', $ts );
+            }
+        }
+
+        autoforum()->get_license_manager()->et_admin_edit_license( $et_user_id, $active, $et_expires );
+
+        // Clear cached ET license status for this user.
+        delete_transient( 'af_et_lic_' . $wp_user_id );
     }
 
     public function ajax_lic_user_search(): void {

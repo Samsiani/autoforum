@@ -151,6 +151,8 @@ final class Plugin {
             'enable_rest_api'     => true,
             'show_demo_data'      => false, // When true the SPA displays hardcoded mock data.
             'et_api_url'          => 'https://easytuner.net:8083', // Easy Tuner license API.
+            'et_admin_email'      => '',   // ET admin account email for Admin/EditLicense.
+            'et_admin_password'   => '',   // ET admin account password.
         ];
     }
 
