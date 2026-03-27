@@ -2313,6 +2313,63 @@ class Admin_Panel {
                     </div>
                 </div>
             <?php endif; ?>
+            <!-- ── Easy Tuner Connected Accounts ──────────────────────────────── -->
+            <?php
+            $et_users = get_users( [
+                'meta_key'   => 'af_et_email',
+                'meta_compare' => 'EXISTS',
+                'fields'     => [ 'ID', 'user_login', 'display_name' ],
+            ] );
+            ?>
+            <h2 style="margin-top:2rem;">
+                <span class="dashicons dashicons-admin-plugins"></span>
+                <?php esc_html_e( 'Easy Tuner Licenses', 'autoforum' ); ?>
+            </h2>
+            <table class="wp-list-table widefat fixed striped" style="margin-top:.5rem">
+                <thead>
+                    <tr>
+                        <th style="width:42px"><?php esc_html_e( 'WP ID', 'autoforum' ); ?></th>
+                        <th><?php esc_html_e( 'User', 'autoforum' ); ?></th>
+                        <th><?php esc_html_e( 'ET Email', 'autoforum' ); ?></th>
+                        <th><?php esc_html_e( 'ET User ID', 'autoforum' ); ?></th>
+                        <th style="width:80px"><?php esc_html_e( 'Status', 'autoforum' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if ( empty( $et_users ) ) : ?>
+                    <tr>
+                        <td colspan="5" style="text-align:center;padding:2rem;">
+                            <?php esc_html_e( 'No users have connected their Easy Tuner account.', 'autoforum' ); ?>
+                        </td>
+                    </tr>
+                <?php else : ?>
+                    <?php foreach ( $et_users as $eu ) :
+                        $eu_id     = (int) $eu->ID;
+                        $et_email  = esc_html( get_user_meta( $eu_id, 'af_et_email', true ) );
+                        $et_uid    = esc_html( get_user_meta( $eu_id, 'af_et_user_id', true ) );
+                        $et_result = autoforum()->get_license_manager()->check_et_license( $eu_id );
+                        $et_active = ! empty( $et_result['active'] );
+                    ?>
+                        <tr>
+                            <td><?php echo $eu_id; ?></td>
+                            <td>
+                                <a href="<?php echo esc_url( get_edit_user_link( $eu_id ) ); ?>">
+                                    <?php echo esc_html( $eu->display_name ?: $eu->user_login ); ?>
+                                </a>
+                            </td>
+                            <td><?php echo $et_email; ?></td>
+                            <td><code style="font-size:.78em"><?php echo $et_uid ?: '—'; ?></code></td>
+                            <td>
+                                <span class="af-badge <?php echo $et_active ? 'af-badge-active' : 'af-badge-muted'; ?>">
+                                    <?php echo $et_active ? esc_html__( 'Active', 'autoforum' ) : esc_html__( 'Inactive', 'autoforum' ); ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+
         </div><!-- .wrap -->
 
         <!-- ── Add / Edit modal ──────────────────────────────────────────────── -->
