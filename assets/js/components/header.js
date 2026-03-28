@@ -28,6 +28,7 @@ const Header = {
   </nav>
 
   <div class="header-actions">
+    ${Header._langSwitcher()}
     ${user ? `
     <a class="btn btn-primary btn-sm" href="#" data-view="create-topic">
       <i class="fa-solid fa-plus"></i> ${_t('new_topic')}
@@ -77,6 +78,20 @@ const Header = {
         this._bindEvents();
     },
 
+    _langSwitcher() {
+        const cfg = typeof AF_DATA !== 'undefined' ? AF_DATA : null;
+        const current = cfg?.lang || 'ka';
+        const langs = cfg?.languages || { ka: 'ქართული', en: 'English' };
+        const flags = { ka: '🇬🇪', en: '🇬🇧' };
+        const other = current === 'ka' ? 'en' : 'ka';
+        return `
+        <button class="btn btn-ghost btn-sm af-lang-btn" type="button" id="lang-switch-btn"
+                title="${langs[other]}" data-lang="${other}"
+                style="font-size:.85rem;padding:4px 10px;min-width:auto;gap:4px">
+            <span style="font-size:1.1rem">${flags[other]}</span> ${other.toUpperCase()}
+        </button>`;
+    },
+
     _bindEvents() {
         // nav links
         document.querySelectorAll('[data-view]').forEach(a => {
@@ -111,6 +126,13 @@ const Header = {
         document.addEventListener('click', () => {
             document.getElementById('user-dropdown')?.classList.remove('show');
             document.getElementById('user-btn')?.setAttribute('aria-expanded', 'false');
+        });
+
+        // language switcher
+        document.getElementById('lang-switch-btn')?.addEventListener('click', (e) => {
+            const lang = e.currentTarget.dataset.lang;
+            document.cookie = `af_lang=${lang};path=/;max-age=${365*24*60*60}`;
+            window.location.reload();
         });
 
         // logout

@@ -173,6 +173,8 @@ class Assets {
                 // Boolean cast: stored as 0/1 in DB, JS expects true/false.
                 'showDemoData'   => ! empty( $settings['show_demo_data'] ),
             ],
+            'lang'        => Translations::current_lang(),
+            'languages'   => Translations::LANGUAGES,
             'i18n'        => Translations::all(),
         ] );
 

@@ -2152,29 +2152,64 @@ class Admin_Panel {
             wp_die( esc_html__( 'You do not have permission to access this page.', 'autoforum' ) );
         }
 
+        $languages  = Translations::LANGUAGES;
+        $active_lang = sanitize_key( $_GET['lang'] ?? 'ka' );
+        if ( ! isset( $languages[ $active_lang ] ) ) {
+            $active_lang = 'ka';
+        }
+
+        // Handle reset.
+        if ( isset( $_GET['reset'] ) && '1' === $_GET['reset'] ) {
+            check_admin_referer( 'af_reset_translations' );
+            delete_option( 'af_translations_' . $active_lang );
+            wp_safe_redirect( admin_url( 'admin.php?page=' . self::TRANSLATIONS_SLUG . '&lang=' . $active_lang ) );
+            exit;
+        }
+
         // Handle save.
         if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['af_translations_nonce'] ) ) {
             check_admin_referer( 'af_save_translations', 'af_translations_nonce' );
-            $submitted = $_POST['af_tr'] ?? [];
-            Translations::save( is_array( $submitted ) ? $submitted : [] );
+            $save_lang  = sanitize_key( $_POST['af_lang'] ?? $active_lang );
+            $submitted  = $_POST['af_tr'] ?? [];
+            Translations::save( $save_lang, is_array( $submitted ) ? $submitted : [] );
+            $active_lang = $save_lang;
             echo '<div class="notice notice-success"><p>' . esc_html__( 'Translations saved.', 'autoforum' ) . '</p></div>';
         }
 
-        $groups   = Translations::groups();
-        $defaults = Translations::defaults();
-        $current  = Translations::all();
+        $groups      = Translations::groups();
+        $en_defaults = Translations::defaults_en();
+        $ka_defaults = Translations::defaults_ka();
+        $current     = Translations::for_lang( $active_lang );
+        $defaults    = 'ka' === $active_lang ? $ka_defaults : $en_defaults;
         ?>
         <div class="wrap af-admin-wrap">
             <h1 class="af-admin-title">
                 <span class="dashicons dashicons-translation"></span>
                 <?php esc_html_e( 'Translations', 'autoforum' ); ?>
             </h1>
+
+            <!-- Language tabs -->
+            <nav class="nav-tab-wrapper" style="margin-bottom:1.5rem">
+                <?php foreach ( $languages as $code => $label ) : ?>
+                    <a class="nav-tab <?php echo $code === $active_lang ? 'nav-tab-active' : ''; ?>"
+                       href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::TRANSLATIONS_SLUG . '&lang=' . $code ) ); ?>">
+                        <?php echo esc_html( $label ); ?> (<?php echo esc_html( strtoupper( $code ) ); ?>)
+                    </a>
+                <?php endforeach; ?>
+            </nav>
+
             <p style="color:#666;margin-bottom:1.5rem">
-                <?php esc_html_e( 'Edit any user-facing string. Leave blank to use the default value. Variables like {username} will be replaced automatically.', 'autoforum' ); ?>
+                <?php
+                printf(
+                    esc_html__( 'Editing: %s. Variables like {username} will be replaced automatically. Leave blank to use the default.', 'autoforum' ),
+                    '<strong>' . esc_html( $languages[ $active_lang ] ) . '</strong>'
+                );
+                ?>
             </p>
 
             <form method="post">
                 <?php wp_nonce_field( 'af_save_translations', 'af_translations_nonce' ); ?>
+                <input type="hidden" name="af_lang" value="<?php echo esc_attr( $active_lang ); ?>">
 
                 <?php foreach ( $groups as $group_id => $group ) : ?>
                     <h2 style="margin-top:2rem;border-bottom:1px solid #ccc;padding-bottom:.5rem">
@@ -2182,14 +2217,18 @@ class Admin_Panel {
                     </h2>
                     <table class="form-table">
                         <?php foreach ( $group['keys'] as $key ) :
-                            $default = $defaults[ $key ] ?? '';
-                            $value   = $current[ $key ] ?? $default;
+                            $default     = $defaults[ $key ] ?? '';
+                            $en_default  = $en_defaults[ $key ] ?? '';
+                            $value       = $current[ $key ] ?? $default;
                         ?>
                             <tr>
                                 <th style="width:220px;font-size:.85rem">
                                     <label for="af_tr_<?php echo esc_attr( $key ); ?>">
                                         <code style="font-size:.78rem"><?php echo esc_html( $key ); ?></code>
                                     </label>
+                                    <?php if ( 'ka' === $active_lang && $en_default ) : ?>
+                                        <br><span style="color:#888;font-size:.75rem">EN: <?php echo esc_html( $en_default ); ?></span>
+                                    <?php endif; ?>
                                 </th>
                                 <td>
                                     <input type="text"
@@ -2198,11 +2237,6 @@ class Admin_Panel {
                                         value="<?php echo esc_attr( $value ); ?>"
                                         class="large-text"
                                         placeholder="<?php echo esc_attr( $default ); ?>">
-                                    <?php if ( $value !== $default ) : ?>
-                                        <span style="color:#666;font-size:.8rem">
-                                            Default: <?php echo esc_html( $default ); ?>
-                                        </span>
-                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -2213,21 +2247,15 @@ class Admin_Panel {
                     <button type="submit" class="button button-primary">
                         <?php esc_html_e( 'Save Translations', 'autoforum' ); ?>
                     </button>
-                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::TRANSLATIONS_SLUG . '&reset=1' ) ); ?>"
+                    <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=' . self::TRANSLATIONS_SLUG . '&lang=' . $active_lang . '&reset=1' ), 'af_reset_translations' ) ); ?>"
                        class="button"
-                       onclick="return confirm('Reset all translations to defaults?')">
+                       onclick="return confirm('Reset <?php echo esc_attr( $languages[ $active_lang ] ); ?> translations to defaults?')">
                         <?php esc_html_e( 'Reset to Defaults', 'autoforum' ); ?>
                     </a>
                 </p>
             </form>
         </div>
         <?php
-        // Handle reset.
-        if ( isset( $_GET['reset'] ) && '1' === $_GET['reset'] ) {
-            delete_option( 'af_translations' );
-            wp_safe_redirect( admin_url( 'admin.php?page=' . self::TRANSLATIONS_SLUG ) );
-            exit;
-        }
     }
 
     public function page_settings(): void {

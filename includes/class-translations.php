@@ -1,10 +1,10 @@
 <?php
 /**
- * Translations — Editable string translations for AutoForum.
+ * Translations — Multilingual string management for AutoForum.
  *
- * All user-facing strings are stored here with defaults.
- * Overrides are saved in wp_options as 'af_translations'.
- * The admin Translations page lets users edit any string.
+ * Supports Georgian (ka, default) and English (en).
+ * English defaults are built-in. Georgian overrides are stored in wp_options.
+ * Current language is read from the 'af_lang' cookie.
  *
  * @package AutoForum
  */
@@ -15,17 +15,31 @@ defined( 'ABSPATH' ) || exit;
 
 class Translations {
 
-    private const OPTION_KEY = 'af_translations';
+    private const OPTION_PREFIX = 'af_translations_';
+    public const LANGUAGES = [
+        'ka' => 'ქართული',
+        'en' => 'English',
+    ];
+    public const DEFAULT_LANG = 'ka';
 
-    /** @var array Cached merged translations (defaults + overrides). */
+    /** @var array Cached translations for current language. */
     private static ?array $cache = null;
+    private static ?string $current_lang = null;
 
     /**
-     * Get a translated string by key.
-     *
-     * @param string $key     The translation key.
-     * @param string $fallback Optional fallback if key not found.
-     * @return string
+     * Get current language from cookie, defaulting to Georgian.
+     */
+    public static function current_lang(): string {
+        if ( null !== self::$current_lang ) {
+            return self::$current_lang;
+        }
+        $lang = $_COOKIE['af_lang'] ?? self::DEFAULT_LANG;
+        self::$current_lang = isset( self::LANGUAGES[ $lang ] ) ? $lang : self::DEFAULT_LANG;
+        return self::$current_lang;
+    }
+
+    /**
+     * Get a translated string for the current language.
      */
     public static function get( string $key, string $fallback = '' ): string {
         $all = self::all();
@@ -33,51 +47,74 @@ class Translations {
     }
 
     /**
-     * Get all translations (defaults merged with saved overrides).
+     * Get all translations for the current language.
      */
     public static function all(): array {
         if ( null !== self::$cache ) {
             return self::$cache;
         }
-        $defaults  = self::defaults();
-        $overrides = get_option( self::OPTION_KEY, [] );
+        self::$cache = self::for_lang( self::current_lang() );
+        return self::$cache;
+    }
+
+    /**
+     * Get all translations for a specific language.
+     * Falls back to English defaults for any missing key.
+     */
+    public static function for_lang( string $lang ): array {
+        $en_defaults = self::defaults_en();
+        $ka_defaults = self::defaults_ka();
+        $defaults    = 'ka' === $lang ? $ka_defaults : $en_defaults;
+
+        // Load saved overrides.
+        $overrides = get_option( self::OPTION_PREFIX . $lang, [] );
         if ( ! is_array( $overrides ) ) {
             $overrides = [];
         }
-        // Only override non-empty values.
-        $merged = $defaults;
+
+        // Merge: start with English defaults, overlay language defaults, then overrides.
+        $merged = $en_defaults;
+        foreach ( $defaults as $k => $v ) {
+            if ( '' !== $v ) {
+                $merged[ $k ] = $v;
+            }
+        }
         foreach ( $overrides as $k => $v ) {
             if ( '' !== trim( $v ) ) {
                 $merged[ $k ] = $v;
             }
         }
-        self::$cache = $merged;
-        return self::$cache;
+
+        return $merged;
     }
 
     /**
-     * Save translation overrides.
+     * Save translation overrides for a language.
      */
-    public static function save( array $overrides ): void {
-        $defaults = self::defaults();
-        $clean    = [];
+    public static function save( string $lang, array $overrides ): void {
+        if ( ! isset( self::LANGUAGES[ $lang ] ) ) {
+            return;
+        }
+        $defaults = 'ka' === $lang ? self::defaults_ka() : self::defaults_en();
+        $en_defaults = self::defaults_en();
+        $clean = [];
         foreach ( $overrides as $k => $v ) {
-            if ( ! isset( $defaults[ $k ] ) ) {
-                continue; // Ignore unknown keys.
+            if ( ! isset( $en_defaults[ $k ] ) ) {
+                continue;
             }
             $v = sanitize_text_field( wp_unslash( $v ) );
-            // Only save if different from default.
-            if ( $v !== $defaults[ $k ] ) {
+            // Only save if different from the language default.
+            $default_val = $defaults[ $k ] ?? $en_defaults[ $k ] ?? '';
+            if ( $v !== $default_val ) {
                 $clean[ $k ] = $v;
             }
         }
-        update_option( self::OPTION_KEY, $clean, false );
-        self::$cache = null; // Clear cache.
+        update_option( self::OPTION_PREFIX . $lang, $clean, false );
+        self::$cache = null;
     }
 
     /**
      * Get translation groups for the admin UI.
-     * Each group has a label and an array of keys.
      */
     public static function groups(): array {
         return [
@@ -101,9 +138,7 @@ class Translations {
             ],
             'password_strength' => [
                 'label' => 'Password Strength',
-                'keys'  => [
-                    'pw_weak', 'pw_fair', 'pw_good', 'pw_strong', 'pw_perfect',
-                ],
+                'keys'  => [ 'pw_weak', 'pw_fair', 'pw_good', 'pw_strong', 'pw_perfect' ],
             ],
             'navigation' => [
                 'label' => 'Navigation',
@@ -229,9 +264,7 @@ class Translations {
             ],
             'ticker' => [
                 'label' => 'Ticker',
-                'keys'  => [
-                    'resume_ticker', 'pause_ticker',
-                ],
+                'keys'  => [ 'resume_ticker', 'pause_ticker' ],
             ],
             'errors' => [
                 'label' => 'Error Messages',
@@ -244,11 +277,10 @@ class Translations {
     }
 
     /**
-     * All default string values.
+     * English defaults (built-in).
      */
-    public static function defaults(): array {
+    public static function defaults_en(): array {
         return [
-            // ── General ──
             'site_name'              => 'EsyTuner Forum',
             'home'                   => 'Home',
             'sign_in'                => 'Sign In',
@@ -261,8 +293,6 @@ class Translations {
             'delete'                 => 'Delete',
             'edit'                   => 'Edit',
             'search'                 => 'Search',
-
-            // ── Auth ──
             'sign_in_required'       => 'Sign In Required',
             'please_sign_in'         => 'Please sign in to access your dashboard.',
             'username'               => 'Username',
@@ -282,15 +312,11 @@ class Translations {
             'registration_failed'    => 'Registration failed. Please try again.',
             'signed_out'             => 'You have been signed out.',
             'login_required_page'    => 'Please sign in to access that page.',
-
-            // ── Password Strength ──
             'pw_weak'                => 'Weak',
             'pw_fair'                => 'Fair',
             'pw_good'                => 'Good',
             'pw_strong'              => 'Strong',
             'pw_perfect'             => 'Perfect',
-
-            // ── Navigation ──
             'nav_home'               => 'Home',
             'nav_ecu_tuning'         => 'ECU Tuning',
             'nav_software'           => 'Software',
@@ -299,8 +325,6 @@ class Translations {
             'dashboard'              => 'Dashboard',
             'edit_profile'           => 'Edit Profile',
             'my_licenses'            => 'My Licenses',
-
-            // ── Forum Home ──
             'forum_categories'       => 'Forum Categories',
             'threads'                => 'Threads',
             'posts'                  => 'Posts',
@@ -314,8 +338,6 @@ class Translations {
             'no_recent_posts'        => 'No recent posts.',
             'join_community'         => 'Join the Community',
             'join_community_desc'    => 'Register free to post, share tunes and get support.',
-
-            // ── Thread List ──
             'could_not_load_threads' => 'Could not load threads',
             'unexpected_error'       => 'An unexpected error occurred.',
             'no_topics_yet'          => 'No topics found in this category yet.',
@@ -334,8 +356,6 @@ class Translations {
             'prev'                   => 'Prev',
             'next'                   => 'Next',
             'sign_in_to_post'        => 'Please sign in to post a new topic.',
-
-            // ── Thread View ──
             'could_not_load_thread'  => 'Could not load thread',
             'premium_thread'         => 'Premium Thread',
             'premium_thread_desc'    => 'This thread is exclusive to members with an active license.',
@@ -366,8 +386,6 @@ class Translations {
             'subscribed'             => 'Subscribed! You\'ll be notified of new replies.',
             'link_copied'            => 'Thread link copied to clipboard.',
             'quote'                  => 'Quote',
-
-            // ── Text Editor ──
             'bold'                   => 'Bold',
             'italic'                 => 'Italic',
             'underline'              => 'Underline',
@@ -387,8 +405,6 @@ class Translations {
             'list_item'              => 'list item',
             'enter_url'              => 'Enter URL:',
             'enter_image_url'        => 'Enter image URL:',
-
-            // ── Create Topic ──
             'must_sign_in_to_create' => 'You must be signed in to create a topic.',
             'create_new_topic'       => 'Create New Topic',
             'category'               => 'Category',
@@ -432,8 +448,6 @@ class Translations {
             'max_attachments'        => 'Max 5 attachments.',
             'file_type_not_allowed'  => 'File type .{ext} not allowed.',
             'file_too_large'         => '{filename} exceeds 10MB limit.',
-
-            // ── Dashboard ──
             'overview'               => 'Overview',
             'total_posts'            => 'Total Posts',
             'reputation'             => 'Reputation',
@@ -460,8 +474,6 @@ class Translations {
             'signature_placeholder'  => 'Your signature shown below posts…',
             'profile_saved'          => 'Profile settings saved!',
             'could_not_save_settings' => 'Could not save settings. Please try again.',
-
-            // ── Security ──
             'security'               => 'Security',
             'change_password'        => 'Change Password',
             'current_password'       => 'Current Password',
@@ -473,8 +485,6 @@ class Translations {
             'password_updated'       => 'Password updated successfully.',
             'active_sessions'        => 'Active Sessions',
             'current_session'        => 'Current session',
-
-            // ── Licenses ──
             'easytuner_pro_license'  => 'EasyTuner Pro License',
             'active'                 => 'Active',
             'inactive'               => 'Inactive',
@@ -504,8 +514,6 @@ class Translations {
             'hwid_reset_success'     => 'HWID reset successfully! New HWID will be assigned on next launch.',
             'hwid_reset_cooldown'    => 'Reset applied — cooldown now active.',
             'could_not_reset_hwid'   => 'Could not reset HWID. Please try again.',
-
-            // ── User Profile ──
             'user_not_found'         => 'User not found',
             'user_not_found_desc'    => 'This user does not exist or has been removed.',
             'member_since_label'     => 'Member Since',
@@ -514,23 +522,277 @@ class Translations {
             'key'                    => 'Key',
             'status'                 => 'Status',
             'never'                  => 'Never',
-
-            // ── Account Update Modal ──
             'update_your_account'    => 'Update Your Account',
             'update_account_desc'    => 'Please verify your details. This is a one-time step after migration.',
             'account_updated'        => 'Account updated successfully!',
             'could_not_save'         => 'Could not save. Please try again.',
-
-            // ── Ticker ──
             'resume_ticker'          => 'Resume ticker',
             'pause_ticker'           => 'Pause ticker',
-
-            // ── Error Messages ──
             'error_generic'          => 'Something went wrong. Please try again.',
             'login_required'         => 'Please log in to continue.',
             'topic_created'          => 'Topic created!',
             'reply_posted'           => 'Reply posted!',
             'thanks_unlocked'        => 'Thanks added — content unlocked!',
+        ];
+    }
+
+    /**
+     * Georgian defaults.
+     */
+    public static function defaults_ka(): array {
+        return [
+            'site_name'              => 'EsyTuner ფორუმი',
+            'home'                   => 'მთავარი',
+            'sign_in'                => 'შესვლა',
+            'register'               => 'რეგისტრაცია',
+            'log_out'                => 'გასვლა',
+            'loading'                => 'იტვირთება',
+            'go_home'                => 'მთავარზე დაბრუნება',
+            'save_changes'           => 'შენახვა',
+            'cancel'                 => 'გაუქმება',
+            'delete'                 => 'წაშლა',
+            'edit'                   => 'რედაქტირება',
+            'search'                 => 'ძიება',
+            'sign_in_required'       => 'საჭიროა შესვლა',
+            'please_sign_in'         => 'გთხოვთ შეხვიდეთ თქვენს ანგარიშზე.',
+            'username'               => 'მომხმარებელი',
+            'password'               => 'პაროლი',
+            'email'                  => 'ელ-ფოსტა',
+            'remember_me'            => 'დამახსოვრება',
+            'forgot_password'        => 'დაგავიწყდათ პაროლი?',
+            'create_account'         => 'ანგარიშის შექმნა',
+            'username_password_required' => 'მომხმარებელი და პაროლი აუცილებელია.',
+            'signing_in'             => 'შესვლა…',
+            'welcome_back'           => 'გამარჯობა, {username}!',
+            'login_failed'           => 'შესვლა ვერ მოხერხდა. სცადეთ ხელახლა.',
+            'all_fields_required'    => 'ყველა ველი აუცილებელია.',
+            'password_min_8'         => 'პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს.',
+            'creating_account'       => 'ანგარიშის შექმნა…',
+            'account_created_welcome' => 'ანგარიში შეიქმნა! გამარჯობა, {username}!',
+            'registration_failed'    => 'რეგისტრაცია ვერ მოხერხდა. სცადეთ ხელახლა.',
+            'signed_out'             => 'თქვენ გამოხვედით ანგარიშიდან.',
+            'login_required_page'    => 'ამ გვერდზე შესასვლელად გთხოვთ შეხვიდეთ.',
+            'pw_weak'                => 'სუსტი',
+            'pw_fair'                => 'საშუალო',
+            'pw_good'                => 'კარგი',
+            'pw_strong'              => 'ძლიერი',
+            'pw_perfect'             => 'შესანიშნავი',
+            'nav_home'               => 'მთავარი',
+            'nav_ecu_tuning'         => 'ECU თიუნინგი',
+            'nav_software'           => 'პროგრამები',
+            'nav_support'            => 'დახმარება',
+            'new_topic'              => 'ახალი თემა',
+            'dashboard'              => 'პანელი',
+            'edit_profile'           => 'პროფილის რედაქტირება',
+            'my_licenses'            => 'ჩემი ლიცენზიები',
+            'forum_categories'       => 'ფორუმის კატეგორიები',
+            'threads'                => 'თემები',
+            'posts'                  => 'პოსტები',
+            'forum_stats'            => 'ფორუმის სტატისტიკა',
+            'members'                => 'წევრები',
+            'online'                 => 'ონლაინ',
+            'top_contributors'       => 'ტოპ კონტრიბუტორები',
+            'rep'                    => 'რეპ',
+            'no_data'                => 'მონაცემები არ არის.',
+            'latest_posts'           => 'უახლესი პოსტები',
+            'no_recent_posts'        => 'ბოლო პოსტები არ არის.',
+            'join_community'         => 'შემოგვიერთდი',
+            'join_community_desc'    => 'დარეგისტრირდი უფასოდ, გაუზიარე თიუნინგი და მიიღე დახმარება.',
+            'could_not_load_threads' => 'თემების ჩატვირთვა ვერ მოხერხდა',
+            'unexpected_error'       => 'მოულოდნელი შეცდომა.',
+            'no_topics_yet'          => 'ამ კატეგორიაში თემები ჯერ არ არის.',
+            'be_first_to_post'       => 'იყავი პირველი!',
+            'latest_activity'        => 'ბოლო აქტივობა',
+            'newest_first'           => 'უახლესი',
+            'most_active'            => 'ყველაზე აქტიური',
+            'most_viewed'            => 'ყველაზე ნანახი',
+            'thread'                 => 'თემა',
+            'last_reply'             => 'ბოლო პასუხი',
+            'replies'                => 'პასუხები',
+            'views'                  => 'ნახვები',
+            'pinned'                 => 'მიმაგრებული',
+            'locked'                 => 'ჩაკეტილი',
+            'premium'                => 'პრემიუმ',
+            'prev'                   => 'წინა',
+            'next'                   => 'შემდეგი',
+            'sign_in_to_post'        => 'ახალი თემის შესაქმნელად გთხოვთ შეხვიდეთ.',
+            'could_not_load_thread'  => 'თემის ჩატვირთვა ვერ მოხერხდა',
+            'premium_thread'         => 'პრემიუმ თემა',
+            'premium_thread_desc'    => 'ეს თემა ხელმისაწვდომია მხოლოდ აქტიური ლიცენზიის მქონე წევრებისთვის.',
+            'premium_unlock_desc'    => 'გახსენი წვდომა პრემიუმ კონტენტზე, თიუნინგ ფაილებზე და ექსპერტთა დისკუსიაზე.',
+            'view_my_licenses'       => 'ჩემი ლიცენზიების ნახვა',
+            'sign_in_to_reply'       => 'დისკუსიაში მონაწილეობისთვის გთხოვთ შეხვიდეთ.',
+            'post_a_reply'           => 'პასუხის დაწერა',
+            'write_reply_placeholder' => 'დაწერეთ თქვენი პასუხი… იყავით დამხმარე და პატივმოყვარე.',
+            'file_upload_hint'       => 'მაქს 5 ფაილი · 10MB თითო · jpg, png, pdf, bin, csv, log',
+            'post_reply'             => 'პასუხის გაგზავნა',
+            'sign_in_to_like'        => 'პოსტების მოწონებისთვის გთხოვთ შეხვიდეთ.',
+            'unlocking'              => 'იხსნება…',
+            'premium_unlocked'       => 'პრემიუმ კონტენტი გაიხსნა!',
+            'could_not_unlock'       => 'კონტენტის გახსნა ვერ მოხერხდა. სცადეთ ხელახლა.',
+            'unlock_premium'         => 'პრემიუმ კონტენტის გახსნა',
+            'sign_in_to_quote'       => 'ციტირებისთვის გთხოვთ შეხვიდეთ.',
+            'reply_area_unavailable' => 'პასუხის არეა მიუწვდომელია.',
+            'quoting_author'         => '{author}-ის ციტირება — დაწერეთ თქვენი პასუხი ქვემოთ.',
+            'sign_in_to_report'      => 'რეპორტისთვის გთხოვთ შეხვიდეთ.',
+            'report_submitted'       => 'რეპორტი გაგზავნილია. მოდერატორები განიხილავენ.',
+            'could_not_report'       => 'რეპორტის გაგზავნა ვერ მოხერხდა. სცადეთ ხელახლა.',
+            'delete_post_confirm'    => 'წაშალოთ ეს პოსტი? ეს ვერ გაუქმდება.',
+            'post_deleted'           => 'პოსტი წაიშალა.',
+            'could_not_delete_post'  => 'პოსტის წაშლა ვერ მოხერხდა.',
+            'post_too_short'         => 'პოსტი ძალიან მოკლეა (მინ 10 სიმბოლო).',
+            'post_updated'           => 'პოსტი განახლდა.',
+            'could_not_save_edit'    => 'რედაქტირების შენახვა ვერ მოხერხდა.',
+            'subscribed'             => 'გამოწერილია! მიიღებთ შეტყობინებას ახალი პასუხების შესახებ.',
+            'link_copied'            => 'თემის ბმული დაკოპირდა.',
+            'quote'                  => 'ციტატა',
+            'bold'                   => 'მუქი',
+            'italic'                 => 'დახრილი',
+            'underline'              => 'ხაზგასმული',
+            'heading'                => 'სათაური',
+            'code_block'             => 'კოდის ბლოკი',
+            'quote_block'            => 'ციტატა',
+            'ordered_list'           => 'დანომრილი სია',
+            'unordered_list'         => 'სია',
+            'link'                   => 'ბმული',
+            'image'                  => 'სურათი',
+            'bold_text'              => 'მუქი ტექსტი',
+            'italic_text'            => 'დახრილი ტექსტი',
+            'underlined_text'        => 'ხაზგასმული ტექსტი',
+            'heading_text'           => 'სათაური',
+            'code_here'              => 'კოდი აქ',
+            'quoted_text'            => 'ციტირებული ტექსტი',
+            'list_item'              => 'სიის ელემენტი',
+            'enter_url'              => 'შეიყვანეთ URL:',
+            'enter_image_url'        => 'შეიყვანეთ სურათის URL:',
+            'must_sign_in_to_create' => 'თემის შესაქმნელად აუცილებელია შესვლა.',
+            'create_new_topic'       => 'ახალი თემის შექმნა',
+            'category'               => 'კატეგორია',
+            'select_category'        => '— აირჩიეთ კატეგორია —',
+            'thread_prefix'          => 'თემის პრეფიქსი',
+            'none'                   => 'არცერთი',
+            'title'                  => 'სათაური',
+            'title_placeholder'      => 'იყავით კონკრეტული — მაგ. BMW N54 Stage 3 lean condition 7000rpm-ზე',
+            'content'                => 'შინაარსი',
+            'content_placeholder'    => 'აღწერეთ თქვენი თემა დეტალურად. მიუთითეთ მანქანის მარკა/მოდელი, მოდიფიკაციები, პროგრამის ვერსია.',
+            'tags'                   => 'ტეგები',
+            'tags_placeholder'       => 'მაგ. BMW, N54, stage3, E40 — გამოყავით მძიმით',
+            'tags_hint'              => 'მაქსიმუმ 5 ტეგი, მძიმით გამოყოფილი.',
+            'attachments'            => 'მიმაგრებული ფაილები',
+            'drag_drop_files'        => 'გადმოათრიეთ ფაილები აქ, ან აირჩიეთ',
+            'lock_content_label'     => 'კონტენტის ჩაკეტვა ლიცენზირებული მომხმარებლებისთვის',
+            'lock_content_desc'      => 'პოსტის ნაწილის დამალვა ლიცენზიის მოთხოვნით (EsyTuner Pro)',
+            'save_draft'             => 'დრაფტის შენახვა',
+            'post_topic'             => 'თემის გამოქვეყნება',
+            'posting_tips_title'     => 'გამოქვეყნების რჩევები',
+            'tip_clear_title'        => 'გამოიყენეთ მკაფიო, კონკრეტული სათაური',
+            'tip_vehicle_info'       => 'მიუთითეთ მანქანის მარკა, მოდელი და წელი',
+            'tip_software_version'   => 'მიუთითეთ პროგრამის ვერსია',
+            'tip_share_logs'         => 'გააზიარეთ ლოგები ან სქრინშოტები',
+            'tip_search_first'       => 'ჯერ მოძებნეთ, დუბლიკატების თავიდან ასაცილებლად',
+            'tip_be_respectful'      => 'იყავით თემაზე და პატივმოყვარე',
+            'forum_rules_title'      => 'ფორუმის წესები',
+            'forum_rules_desc'       => 'არ არის სპამი, პირატობა ან შეურაცხმყოფელი კონტენტი. გაუზიარეთ გამოცდილება და დაეხმარეთ სხვებს.',
+            'read_full_rules'        => 'სრული წესების წაკითხვა',
+            'draft_saved'            => 'დრაფტი შენახულია.',
+            'select_category_error'  => 'გთხოვთ აირჩიოთ კატეგორია.',
+            'enter_title_error'      => 'გთხოვთ შეიყვანოთ სათაური.',
+            'title_too_short'        => 'სათაური ძალიან მოკლეა (მინ 10 სიმბოლო).',
+            'enter_content_error'    => 'გთხოვთ დაწეროთ შინაარსი.',
+            'content_too_short'      => 'შინაარსი ძალიან მოკლეა (მინ 30 სიმბოლო).',
+            'posting'                => 'იგზავნება…',
+            'uploading_files'        => 'ფაილები იტვირთება…',
+            'files_failed_upload'    => 'თემა გამოქვეყნდა, მაგრამ {count} ფაილის ატვირთვა ვერ მოხერხდა: {files}',
+            'topic_posted'           => 'თემა წარმატებით გამოქვეყნდა!',
+            'topic_post_failed'      => 'თემის გამოქვეყნება ვერ მოხერხდა. სცადეთ ხელახლა.',
+            'max_attachments'        => 'მაქსიმუმ 5 მიმაგრება.',
+            'file_type_not_allowed'  => '.{ext} ტიპის ფაილი დაუშვებელია.',
+            'file_too_large'         => '{filename} აჭარბებს 10MB ლიმიტს.',
+            'overview'               => 'მიმოხილვა',
+            'total_posts'            => 'სულ პოსტები',
+            'reputation'             => 'რეპუტაცია',
+            'active_licenses'        => 'აქტიური ლიცენზიები',
+            'account_summary'        => 'ანგარიშის მიმოხილვა',
+            'member_since'           => 'წევრია',
+            'posts_contributed'      => '{count} პოსტი ფორუმზე',
+            'reputation_earned'      => '{count} რეპუტაციის ქულა',
+            'active_licenses_count'  => '{count} აქტიური ლიცენზია',
+            'my_posts'               => 'ჩემი პოსტები',
+            'posts_made'             => 'თქვენ დაწერეთ {count} პოსტი ფორუმზე.',
+            'browse_forum'           => 'ფორუმის დათვალიერება',
+            'no_posts_yet'           => 'ჯერ არაფერი დაგიწერიათ.',
+            'start_discussion'       => 'დისკუსიის დაწყება',
+            'profile_settings'       => 'პროფილის პარამეტრები',
+            'username_no_change'     => 'მომხმარებლის სახელი ვერ შეიცვლება.',
+            'display_name'           => 'საჩვენებელი სახელი',
+            'email_address'          => 'ელ-ფოსტა',
+            'location'               => 'მდებარეობა',
+            'location_placeholder'   => 'მაგ. თბილისი',
+            'about_me'               => 'ჩემ შესახებ',
+            'about_me_placeholder'   => 'მოგვიყევით თქვენ შესახებ…',
+            'forum_signature'        => 'ფორუმის ხელმოწერა',
+            'signature_placeholder'  => 'თქვენი ხელმოწერა პოსტების ქვემოთ…',
+            'profile_saved'          => 'პროფილის პარამეტრები შენახულია!',
+            'could_not_save_settings' => 'პარამეტრების შენახვა ვერ მოხერხდა. სცადეთ ხელახლა.',
+            'security'               => 'უსაფრთხოება',
+            'change_password'        => 'პაროლის შეცვლა',
+            'current_password'       => 'მიმდინარე პაროლი',
+            'new_password'           => 'ახალი პაროლი',
+            'min_8_chars'            => 'მინ. 8 სიმბოლო',
+            'confirm_password'       => 'პაროლის დადასტურება',
+            'repeat_password'        => 'გაიმეორეთ ახალი პაროლი',
+            'update_password'        => 'პაროლის განახლება',
+            'password_updated'       => 'პაროლი წარმატებით განახლდა.',
+            'active_sessions'        => 'აქტიური სესიები',
+            'current_session'        => 'მიმდინარე სესია',
+            'easytuner_pro_license'  => 'EasyTuner Pro ლიცენზია',
+            'active'                 => 'აქტიური',
+            'inactive'               => 'არააქტიური',
+            'user_id'                => 'მომხმარებლის ID',
+            'device'                 => 'მოწყობილობა',
+            'device_activated'       => 'აქტივირებული',
+            'device_not_activated'   => 'არ არის აქტივირებული',
+            'expires'                => 'ვადა',
+            'refresh_status'         => 'სტატუსის განახლება',
+            'disconnect'             => 'გაწყვეტა',
+            'connect_et_account'     => 'Easy Tuner ანგარიშის დაკავშირება',
+            'connect_et_desc'        => 'დააკავშირეთ თქვენი Easy Tuner ანგარიში ლიცენზიის გასააქტიურებლად.',
+            'et_email'               => 'Easy Tuner ელ-ფოსტა',
+            'et_email_placeholder'   => 'your@email.com',
+            'et_password'            => 'Easy Tuner პაროლი',
+            'et_password_placeholder' => 'თქვენი Easy Tuner პაროლი',
+            'connect_account'        => 'ანგარიშის დაკავშირება',
+            'please_fill_both'       => 'გთხოვთ შეავსოთ ორივე ველი.',
+            'connecting'             => 'უკავშირდება...',
+            'et_connected'           => 'Easy Tuner ანგარიში დაკავშირდა!',
+            'connection_failed'      => 'კავშირი ვერ მოხერხდა.',
+            'et_disconnected'        => 'Easy Tuner ანგარიში გაწყდა.',
+            'could_not_disconnect'   => 'გაწყვეტა ვერ მოხერხდა.',
+            'checking'               => 'მოწმდება...',
+            'license_refreshed'      => 'ლიცენზიის სტატუსი განახლდა.',
+            'could_not_check_license' => 'ლიცენზიის შემოწმება ვერ მოხერხდა.',
+            'hwid_reset_success'     => 'HWID გასუფთავდა! ახალი მოწყობილობა გააქტიურდება გაშვებისას.',
+            'hwid_reset_cooldown'    => 'რესეტი გამოყენებულია — cooldown აქტიურია.',
+            'could_not_reset_hwid'   => 'HWID რესეტი ვერ მოხერხდა. სცადეთ ხელახლა.',
+            'user_not_found'         => 'მომხმარებელი ვერ მოიძებნა',
+            'user_not_found_desc'    => 'ეს მომხმარებელი არ არსებობს ან წაშლილია.',
+            'member_since_label'     => 'წევრია',
+            'signature_label'        => 'ხელმოწერა',
+            'licenses_label'         => 'ლიცენზიები',
+            'key'                    => 'გასაღები',
+            'status'                 => 'სტატუსი',
+            'never'                  => 'უვადო',
+            'update_your_account'    => 'ანგარიშის განახლება',
+            'update_account_desc'    => 'გთხოვთ გადაამოწმოთ თქვენი მონაცემები. ეს ერთჯერადი ნაბიჯია.',
+            'account_updated'        => 'ანგარიში წარმატებით განახლდა!',
+            'could_not_save'         => 'შენახვა ვერ მოხერხდა. სცადეთ ხელახლა.',
+            'resume_ticker'          => 'ტიკერის გაშვება',
+            'pause_ticker'           => 'ტიკერის შეჩერება',
+            'error_generic'          => 'რაღაც შეცდომა მოხდა. სცადეთ ხელახლა.',
+            'login_required'         => 'გთხოვთ შეხვიდეთ გასაგრძელებლად.',
+            'topic_created'          => 'თემა შეიქმნა!',
+            'reply_posted'           => 'პასუხი გამოქვეყნდა!',
+            'thanks_unlocked'        => 'მადლობა დამატებულია — კონტენტი გაიხსნა!',
         ];
     }
 }
