@@ -95,7 +95,7 @@ const Router = {
         }
 
         if (this.AUTH_REQUIRED.includes(view) && !State.isAuthenticated()) {
-            Toast.warning('Please sign in to access that page.');
+            Toast.warning(_t('login_required_page'));
             Modal.show('auth-modal');
             return;
         }
@@ -169,9 +169,9 @@ const Router = {
   <div class="card" style="max-width:500px;margin:4rem auto;text-align:center">
     <div class="card-body" style="padding:2.5rem">
       <i class="fa-solid fa-triangle-exclamation" style="font-size:2.5rem;color:var(--danger);margin-bottom:1rem;display:block"></i>
-      <h2 style="margin-bottom:.5rem">Something went wrong</h2>
-      <p style="color:var(--text-muted)">${err.message || 'Could not load this page. Please try again.'}</p>
-      <button class="btn btn-primary" style="margin-top:1.5rem" onclick="Router.navigateTo('home')">Go Home</button>
+      <h2 style="margin-bottom:.5rem">${_t('error_generic')}</h2>
+      <p style="color:var(--text-muted)">${err.message || _t('error_generic')}</p>
+      <button class="btn btn-primary" style="margin-top:1.5rem" onclick="Router.navigateTo('home')">${_t('go_home')}</button>
     </div>
   </div>
 </div>`;

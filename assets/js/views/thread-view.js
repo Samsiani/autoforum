@@ -140,10 +140,10 @@ RPM     BOOST   AFR     INJ_PW
 <div class="page-wrap fade-up">
   <div class="empty-state">
     <i class="fa-solid fa-triangle-exclamation"></i>
-    <h3>Could not load thread</h3>
-    <p>${err.message ?? 'An unexpected error occurred.'}</p>
+    <h3>${_t('could_not_load_thread')}</h3>
+    <p>${err.message ?? _t('unexpected_error')}</p>
     <button class="btn btn-primary" type="button" onclick="Router.navigateTo('home')">
-      <i class="fa-solid fa-house"></i> Go Home
+      <i class="fa-solid fa-house"></i> ${_t('go_home')}
     </button>
   </div>
 </div>`;
@@ -188,7 +188,7 @@ RPM     BOOST   AFR     INJ_PW
 <div class="page-wrap fade-up">
   <!-- breadcrumb -->
   <nav class="breadcrumbs">
-    <a href="#" data-view="home">Home</a>
+    <a href="#" data-view="home">${_t('home')}</a>
     <span class="sep"><i class="fa-solid fa-angle-right"></i></span>
     <a href="#" data-view="thread-list" data-id="${catId}" data-category="${catId}">${catName}</a>
     <span class="sep"><i class="fa-solid fa-angle-right"></i></span>
@@ -200,14 +200,14 @@ RPM     BOOST   AFR     INJ_PW
     <div class="thread-hero-left">
       <div class="thread-hero-badges">
         ${prefixBadge}
-        ${locked    ? '<span class="badge badge-locked">Locked</span>'  : ''}
+        ${locked    ? `<span class="badge badge-locked">${_t('locked')}</span>`  : ''}
         ${solved    ? '<span class="badge badge-solved">Solved</span>'  : ''}
-        ${isPremium ? '<span class="badge badge-premium"><i class="fa-solid fa-crown"></i> Premium</span>' : ''}
+        ${isPremium ? `<span class="badge badge-premium"><i class="fa-solid fa-crown"></i> ${_t('premium')}</span>` : ''}
       </div>
       <h1 class="thread-hero-title">${title}</h1>
       <div class="thread-hero-meta">
-        ${views !== null ? `<span><i class="fa-solid fa-eye"></i> ${Number(views).toLocaleString()} views</span>` : ''}
-        <span><i class="fa-solid fa-comments"></i> ${replyCount} replies</span>
+        ${views !== null ? `<span><i class="fa-solid fa-eye"></i> ${Number(views).toLocaleString()} ${_t('views').toLowerCase()}</span>` : ''}
+        <span><i class="fa-solid fa-comments"></i> ${replyCount} ${_t('replies').toLowerCase()}</span>
       </div>
     </div>
     <div class="thread-hero-actions">
@@ -240,7 +240,7 @@ RPM     BOOST   AFR     INJ_PW
         let html = '<div class="pagination">';
         if (page > 1) {
             html += `<button class="btn btn-ghost btn-sm page-btn" data-page="${page - 1}">
-              <i class="fa-solid fa-angle-left"></i> Prev</button>`;
+              <i class="fa-solid fa-angle-left"></i> ${_t('prev')}</button>`;
         }
         const start = Math.max(1, page - 2);
         const end   = Math.min(total_pages, page + 2);
@@ -249,7 +249,7 @@ RPM     BOOST   AFR     INJ_PW
         }
         if (page < total_pages) {
             html += `<button class="btn btn-ghost btn-sm page-btn" data-page="${page + 1}">
-              Next <i class="fa-solid fa-angle-right"></i></button>`;
+              ${_t('next')} <i class="fa-solid fa-angle-right"></i></button>`;
         }
         html += '</div>';
         return html;
@@ -269,9 +269,9 @@ RPM     BOOST   AFR     INJ_PW
         ${u.badges.map(b => `<span class="badge ${b}">${this._badgeLabel(b)}</span>`).join('')}
       </div>
       <div class="post-user-stats">
-        <div class="pus-item"><span class="pus-val">${u.posts.toLocaleString()}</span><span class="pus-lbl">Posts</span></div>
-        <div class="pus-item"><span class="pus-val">${u.rep.toLocaleString()}</span><span class="pus-lbl">Rep</span></div>
-        <div class="pus-item"><span class="pus-val">${u.joined}</span><span class="pus-lbl">Joined</span></div>
+        <div class="pus-item"><span class="pus-val">${u.posts.toLocaleString()}</span><span class="pus-lbl">${_t('posts')}</span></div>
+        <div class="pus-item"><span class="pus-val">${u.rep.toLocaleString()}</span><span class="pus-lbl">${_t('rep')}</span></div>
+        <div class="pus-item"><span class="pus-val">${u.joined}</span><span class="pus-lbl">${_t('member_since_label')}</span></div>
       </div>
     </div>
 
@@ -305,8 +305,8 @@ RPM     BOOST   AFR     INJ_PW
         </div>
         ${(State.currentUser?.role === 'Moderator' || State.currentUser?.role === 'Admin') ? `
         <div class="post-mod-actions">
-          <button class="action-btn mod-edit" type="button" title="Edit" data-post-id="${p.id}" data-user-id="${p.author?.id ?? 0}"><i class="fa-solid fa-pen"></i></button>
-          <button class="action-btn mod-delete" type="button" title="Delete" data-post-id="${p.id}"><i class="fa-solid fa-trash"></i></button>
+          <button class="action-btn mod-edit" type="button" title="${_t('edit')}" data-post-id="${p.id}" data-user-id="${p.author?.id ?? 0}"><i class="fa-solid fa-pen"></i></button>
+          <button class="action-btn mod-delete" type="button" title="${_t('delete')}" data-post-id="${p.id}"><i class="fa-solid fa-trash"></i></button>
         </div>` : ''}
       </div>
     </div>
@@ -342,8 +342,8 @@ RPM     BOOST   AFR     INJ_PW
       <a class="post-username" href="#" data-view="user-profile" data-id="${p.user_id}">${p.author_name || 'Unknown'}</a>
       ${location}
       <div class="post-user-stats">
-        <div class="pus-item"><span class="pus-val">${posts.toLocaleString()}</span><span class="pus-lbl">Posts</span></div>
-        <div class="pus-item"><span class="pus-val">${rep.toLocaleString()}</span><span class="pus-lbl">Rep</span></div>
+        <div class="pus-item"><span class="pus-val">${posts.toLocaleString()}</span><span class="pus-lbl">${_t('posts')}</span></div>
+        <div class="pus-item"><span class="pus-val">${rep.toLocaleString()}</span><span class="pus-lbl">${_t('rep')}</span></div>
       </div>
     </div>
 
@@ -372,8 +372,8 @@ RPM     BOOST   AFR     INJ_PW
         </div>
         ${(canEdit || canDel) ? `
         <div class="post-mod-actions">
-          ${canEdit ? `<button class="action-btn mod-edit" type="button" title="Edit" data-post-id="${p.id}" data-user-id="${p.user_id}"><i class="fa-solid fa-pen"></i></button>` : ''}
-          ${canDel  ? `<button class="action-btn mod-delete" type="button" title="Delete" data-post-id="${p.id}"><i class="fa-solid fa-trash"></i></button>` : ''}
+          ${canEdit ? `<button class="action-btn mod-edit" type="button" title="${_t('edit')}" data-post-id="${p.id}" data-user-id="${p.user_id}"><i class="fa-solid fa-pen"></i></button>` : ''}
+          ${canDel  ? `<button class="action-btn mod-delete" type="button" title="${_t('delete')}" data-post-id="${p.id}"><i class="fa-solid fa-trash"></i></button>` : ''}
         </div>` : ''}
       </div>
     </div>
@@ -436,21 +436,21 @@ RPM     BOOST   AFR     INJ_PW
 <div class="page-wrap fade-up">
   <div class="premium-gate">
     <div class="premium-gate-icon"><i class="fa-solid fa-crown"></i></div>
-    <h2 class="premium-gate-title">Premium Thread</h2>
+    <h2 class="premium-gate-title">${_t('premium_thread')}</h2>
     <p class="premium-gate-body">
-      This thread is exclusive to members with an active license.<br>
-      Unlock access to premium content, tuning files, and expert discussion.
+      ${_t('premium_thread_desc')}<br>
+      ${_t('premium_unlock_desc')}
     </p>
     <div class="premium-gate-actions">
       ${isLoggedIn
         ? `<a class="btn btn-primary" href="${(typeof AF_DATA !== 'undefined' ? AF_DATA.siteUrl : '') + '/my-account/licenses'}" target="_blank">
-             <i class="fa-solid fa-key"></i> View My Licenses
+             <i class="fa-solid fa-key"></i> ${_t('view_my_licenses')}
            </a>`
         : `<button class="btn btn-primary" type="button" id="pg-login-btn">
-             <i class="fa-solid fa-right-to-bracket"></i> Sign In
+             <i class="fa-solid fa-right-to-bracket"></i> ${_t('sign_in')}
            </button>`}
       <button class="btn btn-ghost" type="button" onclick="Router.navigateTo('home')">
-        <i class="fa-solid fa-house"></i> Go Home
+        <i class="fa-solid fa-house"></i> ${_t('go_home')}
       </button>
     </div>
   </div>
@@ -463,9 +463,9 @@ RPM     BOOST   AFR     INJ_PW
 <div class="quick-reply card">
   <div class="card-body text-center" style="padding:2rem">
     <i class="fa-solid fa-lock" style="font-size:2rem;color:var(--text-dim);margin-bottom:.75rem"></i>
-    <p style="color:var(--text-muted);margin-bottom:1rem">Sign in to join the discussion.</p>
+    <p style="color:var(--text-muted);margin-bottom:1rem">${_t('sign_in_to_reply')}</p>
     <button class="btn btn-primary" type="button" id="reply-login-btn">
-      <i class="fa-solid fa-right-to-bracket"></i> Sign In to Reply
+      <i class="fa-solid fa-right-to-bracket"></i> ${_t('sign_in')}
     </button>
   </div>
 </div>`;
@@ -474,28 +474,28 @@ RPM     BOOST   AFR     INJ_PW
         return `
 <div class="quick-reply card">
   <div class="card-header">
-    <span class="card-title"><i class="fa-solid fa-reply"></i> Post a Reply</span>
+    <span class="card-title"><i class="fa-solid fa-reply"></i> ${_t('post_a_reply')}</span>
   </div>
   <div class="card-body">
     <div class="editor-toolbar">
-      <button class="editor-btn" title="Bold" type="button"><i class="fa-solid fa-bold"></i></button>
-      <button class="editor-btn" title="Italic" type="button"><i class="fa-solid fa-italic"></i></button>
-      <button class="editor-btn" title="Underline" type="button"><i class="fa-solid fa-underline"></i></button>
+      <button class="editor-btn" title="${_t('bold')}" type="button"><i class="fa-solid fa-bold"></i></button>
+      <button class="editor-btn" title="${_t('italic')}" type="button"><i class="fa-solid fa-italic"></i></button>
+      <button class="editor-btn" title="${_t('underline')}" type="button"><i class="fa-solid fa-underline"></i></button>
       <div class="editor-sep"></div>
-      <button class="editor-btn" title="Link" type="button"><i class="fa-solid fa-link"></i></button>
-      <button class="editor-btn" title="Image" type="button"><i class="fa-regular fa-image"></i></button>
-      <button class="editor-btn" title="Code" type="button"><i class="fa-solid fa-code"></i></button>
-      <button class="editor-btn" title="Quote" type="button"><i class="fa-solid fa-quote-left"></i></button>
+      <button class="editor-btn" title="${_t('link')}" type="button"><i class="fa-solid fa-link"></i></button>
+      <button class="editor-btn" title="${_t('image')}" type="button"><i class="fa-regular fa-image"></i></button>
+      <button class="editor-btn" title="${_t('code_block')}" type="button"><i class="fa-solid fa-code"></i></button>
+      <button class="editor-btn" title="${_t('quote_block')}" type="button"><i class="fa-solid fa-quote-left"></i></button>
       <div class="editor-sep"></div>
-      <button class="editor-btn" title="Ordered List" type="button"><i class="fa-solid fa-list-ol"></i></button>
-      <button class="editor-btn" title="Unordered List" type="button"><i class="fa-solid fa-list-ul"></i></button>
+      <button class="editor-btn" title="${_t('ordered_list')}" type="button"><i class="fa-solid fa-list-ol"></i></button>
+      <button class="editor-btn" title="${_t('unordered_list')}" type="button"><i class="fa-solid fa-list-ul"></i></button>
     </div>
-    <textarea class="form-textarea" id="reply-body" rows="6" placeholder="Write your reply… Be helpful, be respectful."></textarea>
+    <textarea class="form-textarea" id="reply-body" rows="6" placeholder="${_t('write_reply_placeholder')}"></textarea>
     <div class="form-group" style="margin-top:.75rem">
       <div class="drop-zone" id="reply-drop-zone">
         <i class="fa-solid fa-cloud-arrow-up dz-icon"></i>
         <p class="dz-text">Drag &amp; drop files here, or <span class="dz-link" id="reply-dz-click">browse</span></p>
-        <p class="dz-hint">Max 5 files · 10MB each · jpg, png, pdf, bin, csv, log</p>
+        <p class="dz-hint">${_t('file_upload_hint')}</p>
         <input type="file" id="reply-file-input" multiple accept=".jpg,.jpeg,.png,.pdf,.bin,.csv,.log" style="display:none">
       </div>
       <div class="file-list" id="reply-file-list"></div>
@@ -503,7 +503,7 @@ RPM     BOOST   AFR     INJ_PW
     <div class="reply-footer">
       <span class="char-count" id="char-count">0 / 10000</span>
       <button class="btn btn-primary" type="button" id="submit-reply">
-        <i class="fa-solid fa-paper-plane"></i> Post Reply
+        <i class="fa-solid fa-paper-plane"></i> ${_t('post_reply')}
       </button>
     </div>
   </div>
@@ -536,7 +536,7 @@ RPM     BOOST   AFR     INJ_PW
         document.querySelectorAll('.action-btn.like').forEach(btn => {
             btn.addEventListener('click', async () => {
                 if (!State.isAuthenticated()) {
-                    Toast.warning('Sign in to like posts.');
+                    Toast.warning(_t('sign_in_to_like'));
                     return;
                 }
                 const postId  = parseInt(btn.dataset.post, 10);
@@ -562,7 +562,7 @@ RPM     BOOST   AFR     INJ_PW
             btn.addEventListener('click', async () => {
                 const postId = parseInt(btn.dataset.post, 10);
                 if (!State.isAuthenticated()) {
-                    Toast.warning('Please sign in to access premium content.');
+                    Toast.warning(_t('sign_in_to_like'));
                     Modal.show('auth-modal');
                     return;
                 }
@@ -572,15 +572,15 @@ RPM     BOOST   AFR     INJ_PW
                     Router.navigateTo('dashboard');
                     return;
                 }
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Unlocking…';
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${_t('unlocking')}`;
                 btn.disabled = true;
                 try {
                     await API.thankPost(postId);
-                    Toast.success('Premium content unlocked!');
+                    Toast.success(_t('premium_unlocked'));
                     this.render(Router.currentParams);
                 } catch (err) {
-                    Toast.error(err.message ?? 'Could not unlock content. Please try again.');
-                    btn.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Premium Content';
+                    Toast.error(err.message ?? _t('could_not_unlock'));
+                    btn.innerHTML = `<i class="fa-solid fa-key"></i> ${_t('unlock_premium')}`;
                     btn.disabled = false;
                 }
             });
@@ -589,7 +589,7 @@ RPM     BOOST   AFR     INJ_PW
         // quote buttons — insert quoted text into reply textarea
         document.querySelectorAll('.action-btn[title="Quote"]').forEach(btn => {
             btn.addEventListener('click', () => {
-                if (!State.isAuthenticated()) { Toast.warning('Sign in to quote posts.'); return; }
+                if (!State.isAuthenticated()) { Toast.warning(_t('sign_in_to_quote')); return; }
                 const postCard = btn.closest('.post-card');
                 const author   = postCard?.querySelector('.post-username')?.textContent.trim() || 'User';
                 const bodyEl   = postCard?.querySelector('.post-body');
@@ -598,28 +598,28 @@ RPM     BOOST   AFR     INJ_PW
                 tmp.innerHTML = bodyEl?.innerHTML || '';
                 const bodyText = (tmp.innerText || tmp.textContent || '').trim();
                 const textarea = document.getElementById('reply-body');
-                if (!textarea) { Toast.warning('Reply area not available.'); return; }
+                if (!textarea) { Toast.warning(_t('reply_area_unavailable')); return; }
                 const insert = `[quote=${author}]\n${bodyText}\n[/quote]\n\n`;
                 textarea.value = insert + textarea.value;
                 document.getElementById('char-count').textContent = `${textarea.value.length} / 10000`;
                 textarea.focus();
                 textarea.setSelectionRange(insert.length, insert.length);
                 textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                Toast.info(`Quoting ${author} — write your reply below.`);
+                Toast.info(_t('quoting_author', { author }));
             });
         });
 
         // report buttons
         document.querySelectorAll('.action-btn[title="Report"]').forEach(btn => {
             btn.addEventListener('click', async () => {
-                if (!State.isAuthenticated()) { Toast.warning('Sign in to report posts.'); return; }
+                if (!State.isAuthenticated()) { Toast.warning(_t('sign_in_to_report')); return; }
                 const postId = parseInt(btn.closest('.post-card')?.id?.replace('post-', ''), 10);
                 if (!postId) return;
                 try {
                     await API.reportPost(postId);
-                    Toast.info('Report submitted. Our moderators will review this post shortly.');
+                    Toast.info(_t('report_submitted'));
                 } catch (err) {
-                    Toast.error(err.message ?? 'Could not submit report. Please try again.');
+                    Toast.error(err.message ?? _t('could_not_report'));
                 }
             });
         });
@@ -628,7 +628,7 @@ RPM     BOOST   AFR     INJ_PW
         document.querySelectorAll('.mod-delete').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const postId = parseInt(btn.dataset.postId, 10);
-                if (!confirm('Delete this post? This cannot be undone.')) return;
+                if (!confirm(_t('delete_post_confirm'))) return;
                 btn.disabled = true;
                 try {
                     await API.deletePost(postId);
@@ -638,9 +638,9 @@ RPM     BOOST   AFR     INJ_PW
                         card.style.opacity = '0';
                         setTimeout(() => card.remove(), 260);
                     }
-                    Toast.success('Post deleted.');
+                    Toast.success(_t('post_deleted'));
                 } catch (err) {
-                    Toast.error(err.message ?? 'Could not delete post.');
+                    Toast.error(err.message ?? _t('could_not_delete_post'));
                     btn.disabled = false;
                 }
             });
@@ -667,8 +667,8 @@ RPM     BOOST   AFR     INJ_PW
                 wrap.innerHTML = `
                     <textarea class="inline-edit-ta" rows="6">${plain.replace(/</g,'&lt;')}</textarea>
                     <div class="inline-edit-actions">
-                        <button class="btn btn-primary btn-sm inline-save">Save</button>
-                        <button class="btn btn-sm inline-cancel" style="margin-left:8px">Cancel</button>
+                        <button class="btn btn-primary btn-sm inline-save">${_t('save_changes')}</button>
+                        <button class="btn btn-sm inline-cancel" style="margin-left:8px">${_t('cancel')}</button>
                     </div>`;
                 bodyEl.insertAdjacentElement('afterend', wrap);
                 wrap.querySelector('textarea').focus();
@@ -681,7 +681,7 @@ RPM     BOOST   AFR     INJ_PW
                 wrap.querySelector('.inline-save').addEventListener('click', async () => {
                     const newContent = wrap.querySelector('textarea').value.trim();
                     if (!newContent || newContent.length < 10) {
-                        Toast.warning('Post is too short (min 10 characters).');
+                        Toast.warning(_t('post_too_short'));
                         return;
                     }
                     const saveBtn = wrap.querySelector('.inline-save');
@@ -692,10 +692,10 @@ RPM     BOOST   AFR     INJ_PW
                         bodyEl.innerHTML = res.content || newContent;
                         bodyEl.style.display = '';
                         wrap.remove();
-                        Toast.success('Post updated.');
+                        Toast.success(_t('post_updated'));
                     } catch (err) {
-                        Toast.error(err.message ?? 'Could not save edit.');
-                        saveBtn.innerHTML = 'Save';
+                        Toast.error(err.message ?? _t('could_not_save_edit'));
+                        saveBtn.innerHTML = _t('save_changes');
                         saveBtn.disabled = false;
                     }
                 });
@@ -704,11 +704,11 @@ RPM     BOOST   AFR     INJ_PW
 
         // subscribe/share
         document.getElementById('subscribe-btn')?.addEventListener('click', () => {
-            Toast.success('Subscribed! You\'ll be notified of new replies.');
+            Toast.success(_t('subscribed'));
         });
         document.getElementById('share-btn')?.addEventListener('click', () => {
             if (navigator.clipboard) navigator.clipboard.writeText(window.location.href);
-            Toast.info('Thread link copied to clipboard.');
+            Toast.info(_t('link_copied'));
         });
 
         // reply area
@@ -739,54 +739,42 @@ RPM     BOOST   AFR     INJ_PW
         document.querySelectorAll('.editor-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (!textarea) return;
-                switch (btn.title) {
-                    case 'Bold':
-                        _wrap('<strong>', '</strong>', 'bold text');
-                        break;
-                    case 'Italic':
-                        _wrap('<em>', '</em>', 'italic text');
-                        break;
-                    case 'Underline':
-                        _wrap('<u>', '</u>', 'underlined text');
-                        break;
-                    case 'Code': {
-                        const sel = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd);
-                        if (sel.includes('\n')) {
-                            _wrap('<pre><code>', '</code></pre>', 'code here');
-                        } else {
-                            _wrap('<code>', '</code>', 'code');
-                        }
-                        break;
+                const title = btn.title;
+                if (title === _t('bold')) {
+                    _wrap('<strong>', '</strong>', _t('bold_text'));
+                } else if (title === _t('italic')) {
+                    _wrap('<em>', '</em>', _t('italic_text'));
+                } else if (title === _t('underline')) {
+                    _wrap('<u>', '</u>', _t('underlined_text'));
+                } else if (title === _t('code_block')) {
+                    const sel = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd);
+                    if (sel.includes('\n')) {
+                        _wrap('<pre><code>', '</code></pre>', _t('code_here'));
+                    } else {
+                        _wrap('<code>', '</code>', 'code');
                     }
-                    case 'Quote':
-                        _wrap('[quote]\n', '\n[/quote]\n', 'quoted text');
-                        break;
-                    case 'Ordered List':
-                        _wrap('<ol>\n  <li>', '</li>\n</ol>', 'list item');
-                        break;
-                    case 'Unordered List':
-                        _wrap('<ul>\n  <li>', '</li>\n</ul>', 'list item');
-                        break;
-                    case 'Link': {
-                        const url = prompt('Enter URL:');
-                        if (!url) break;
-                        const sel = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd) || url;
-                        _wrap(`<a href="${url}" target="_blank" rel="noopener">`, '</a>', sel);
-                        break;
-                    }
-                    case 'Image': {
-                        const src = prompt('Enter image URL:');
-                        if (!src) break;
-                        const start = textarea.selectionStart;
-                        const before = textarea.value.slice(0, start);
-                        const after  = textarea.value.slice(start);
-                        const tag    = `<img src="${src}" alt="image" class="post-img">`;
-                        textarea.value = before + tag + after;
-                        textarea.selectionStart = textarea.selectionEnd = start + tag.length;
-                        textarea.focus();
-                        document.getElementById('char-count').textContent = `${textarea.value.length} / 10000`;
-                        break;
-                    }
+                } else if (title === _t('quote_block')) {
+                    _wrap('[quote]\n', '\n[/quote]\n', _t('quoted_text'));
+                } else if (title === _t('ordered_list')) {
+                    _wrap('<ol>\n  <li>', '</li>\n</ol>', _t('list_item'));
+                } else if (title === _t('unordered_list')) {
+                    _wrap('<ul>\n  <li>', '</li>\n</ul>', _t('list_item'));
+                } else if (title === _t('link')) {
+                    const url = prompt(_t('enter_url'));
+                    if (!url) return;
+                    const sel = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd) || url;
+                    _wrap(`<a href="${url}" target="_blank" rel="noopener">`, '</a>', sel);
+                } else if (title === _t('image')) {
+                    const src = prompt(_t('enter_image_url'));
+                    if (!src) return;
+                    const start = textarea.selectionStart;
+                    const before = textarea.value.slice(0, start);
+                    const after  = textarea.value.slice(start);
+                    const tag    = `<img src="${src}" alt="image" class="post-img">`;
+                    textarea.value = before + tag + after;
+                    textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+                    textarea.focus();
+                    document.getElementById('char-count').textContent = `${textarea.value.length} / 10000`;
                 }
             });
         });
@@ -809,9 +797,9 @@ RPM     BOOST   AFR     INJ_PW
         document.getElementById('submit-reply')?.addEventListener('click', async () => {
             const body = textarea?.value.trim();
             if (!body) { Toast.warning('Please write something before posting.'); return; }
-            if (body.length < 10) { Toast.warning('Reply is too short (min 10 characters).'); return; }
+            if (body.length < 10) { Toast.warning(_t('post_too_short')); return; }
             const btn = document.getElementById('submit-reply');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting…';
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${_t('posting')}`;
             btn.disabled = true;
             try {
                 const topicId = this._currentTopicId;
@@ -820,25 +808,25 @@ RPM     BOOST   AFR     INJ_PW
 
                 // Upload attachments sequentially if any were staged.
                 if (postId && this.replyAttachments.length > 0) {
-                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading files…';
+                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${_t('uploading_files')}`;
                     const failed = [];
                     for (const file of this.replyAttachments) {
                         try { await API.uploadAttachment(file, postId); }
                         catch (e) { failed.push(file.name); }
                     }
-                    if (failed.length) Toast.warning(`Reply posted, but ${failed.length} file(s) failed to upload: ${failed.join(', ')}`);
+                    if (failed.length) Toast.warning(_t('files_failed_upload', { count: failed.length, files: failed.join(', ') }));
                     this.replyAttachments = [];
                 }
 
-                Toast.success('Reply posted successfully! ✅');
+                Toast.success(_t('reply_posted'));
                 textarea.value = '';
                 document.getElementById('char-count').textContent = '0 / 10000';
                 // Refresh the thread to show the new reply.
                 this.render(Router.currentParams);
             } catch (err) {
-                Toast.error(err.message ?? 'Failed to post reply. Please try again.');
+                Toast.error(err.message ?? _t('topic_post_failed'));
             } finally {
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Post Reply';
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> ${_t('post_reply')}`;
                 btn.disabled = false;
             }
         });
@@ -877,10 +865,10 @@ RPM     BOOST   AFR     INJ_PW
         if (!list) return;
         const allowed = ['jpg','jpeg','png','pdf','bin','csv','log'];
         for (const file of Array.from(files)) {
-            if (this.replyAttachments.length >= 5) { Toast.warning('Max 5 attachments.'); break; }
+            if (this.replyAttachments.length >= 5) { Toast.warning(_t('max_attachments')); break; }
             const ext = file.name.split('.').pop().toLowerCase();
-            if (!allowed.includes(ext)) { Toast.error(`.${ext} files are not allowed.`); continue; }
-            if (file.size > 10 * 1024 * 1024) { Toast.error(`${file.name} exceeds 10 MB.`); continue; }
+            if (!allowed.includes(ext)) { Toast.error(_t('file_type_not_allowed', { ext })); continue; }
+            if (file.size > 10 * 1024 * 1024) { Toast.error(_t('file_too_large', { filename: file.name })); continue; }
             this.replyAttachments.push(file);
             const item = document.createElement('div');
             item.className = 'file-item';

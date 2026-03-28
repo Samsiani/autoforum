@@ -114,10 +114,10 @@ const ThreadListView = {
 <div class="page-wrap fade-up">
   <div class="empty-state">
     <i class="fa-solid fa-triangle-exclamation"></i>
-    <h3>Could not load threads</h3>
-    <p>${err?.message ?? 'An unexpected error occurred.'}</p>
+    <h3>${_t('could_not_load_threads')}</h3>
+    <p>${err?.message ?? _t('unexpected_error')}</p>
     <button class="btn btn-primary" type="button" onclick="Router.navigateTo('home')">
-      <i class="fa-solid fa-house"></i> Go Home
+      <i class="fa-solid fa-house"></i> ${_t('go_home')}
     </button>
   </div>
 </div>`;
@@ -139,8 +139,8 @@ const ThreadListView = {
 <div class="thread-row thread-empty">
   <div style="grid-column:1/-1;padding:3rem;text-align:center;color:var(--text-muted)">
     <i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:.75rem"></i>
-    No topics found in this category yet.
-    ${State.isAuthenticated() ? `<br><a href="#" data-view="create-topic" style="margin-top:.5rem;display:inline-block">Be the first to post!</a>` : ''}
+    ${_t('no_topics_yet')}
+    ${State.isAuthenticated() ? `<br><a href="#" data-view="create-topic" style="margin-top:.5rem;display:inline-block">${_t('be_first_to_post')}</a>` : ''}
   </div>
 </div>`;
         } else {
@@ -155,7 +155,7 @@ const ThreadListView = {
 <div class="page-wrap fade-up">
   <!-- breadcrumb -->
   <nav class="breadcrumbs">
-    <a href="#" data-view="home">Home</a>
+    <a href="#" data-view="home">${_t('home')}</a>
     <span class="sep"><i class="fa-solid fa-angle-right"></i></span>
     <span>${cat.name}</span>
   </nav>
@@ -166,21 +166,21 @@ const ThreadListView = {
       <h1 class="tlh-title">
         ${iconHtml} ${cat.name}
       </h1>
-      <span class="tlh-count">${threads.length} thread${threads.length !== 1 ? 's' : ''}</span>
+      <span class="tlh-count">${threads.length} ${threads.length !== 1 ? _t('threads').toLowerCase() : _t('thread').toLowerCase()}</span>
     </div>
     <div class="tlh-actions">
       <select class="form-select form-select-sm" id="sort-select">
-        <option value="latest"  ${sort === 'latest'  ? 'selected' : ''}>Latest Activity</option>
-        <option value="newest"  ${sort === 'newest'  ? 'selected' : ''}>Newest First</option>
-        <option value="hot"     ${sort === 'hot'     ? 'selected' : ''}>Most Active</option>
-        <option value="views"   ${sort === 'views'   ? 'selected' : ''}>Most Viewed</option>
+        <option value="latest"  ${sort === 'latest'  ? 'selected' : ''}>${_t('latest_activity')}</option>
+        <option value="newest"  ${sort === 'newest'  ? 'selected' : ''}>${_t('newest_first')}</option>
+        <option value="hot"     ${sort === 'hot'     ? 'selected' : ''}>${_t('most_active')}</option>
+        <option value="views"   ${sort === 'views'   ? 'selected' : ''}>${_t('most_viewed')}</option>
       </select>
       ${State.isAuthenticated() ? `
       <a class="btn btn-primary btn-sm" href="#" data-view="create-topic" data-id="${catId}">
-        <i class="fa-solid fa-plus"></i> New Topic
+        <i class="fa-solid fa-plus"></i> ${_t('new_topic')}
       </a>` : `
       <button class="btn btn-primary btn-sm" type="button" id="post-login-btn">
-        <i class="fa-solid fa-plus"></i> New Topic
+        <i class="fa-solid fa-plus"></i> ${_t('new_topic')}
       </button>`}
     </div>
   </div>
@@ -189,10 +189,10 @@ const ThreadListView = {
   <div class="thread-table">
     <div class="thread-table-head">
       <div></div>
-      <div>Thread</div>
-      <div class="text-center">Last Reply</div>
-      <div class="text-center">Replies</div>
-      <div class="text-center">Views</div>
+      <div>${_t('thread')}</div>
+      <div class="text-center">${_t('last_reply')}</div>
+      <div class="text-center">${_t('replies')}</div>
+      <div class="text-center">${_t('views')}</div>
     </div>
 
     ${rowsHtml}
@@ -253,9 +253,9 @@ const ThreadListView = {
     <div class="thread-meta">
       ${avatar}
       <span>by <strong>${author}</strong></span>
-      ${pinned ? '<span class="badge badge-pinned">Pinned</span>' : ''}
-      ${locked ? '<span class="badge badge-pinned" style="background:var(--text-dim)">Locked</span>' : ''}
-      ${premium ? '<span class="badge badge-premium"><i class="fa-solid fa-crown"></i> Premium</span>' : ''}
+      ${pinned ? `<span class="badge badge-pinned">${_t('pinned')}</span>` : ''}
+      ${locked ? `<span class="badge badge-pinned" style="background:var(--text-dim)">${_t('locked')}</span>` : ''}
+      ${premium ? `<span class="badge badge-premium"><i class="fa-solid fa-crown"></i> ${_t('premium')}</span>` : ''}
     </div>
   </div>
   <div class="thread-last">
@@ -293,11 +293,11 @@ const ThreadListView = {
 <div class="pagination">
   ${currentPage > 1 ? `<button class="page-btn page-prev" type="button"
     data-page="${currentPage - 1}" data-cat="${catId}" data-sort="${sort}">
-    <i class="fa-solid fa-angle-left"></i> Prev</button>` : ''}
+    <i class="fa-solid fa-angle-left"></i> ${_t('prev')}</button>` : ''}
   ${btnHtml}
   ${currentPage < totalPages ? `<button class="page-btn page-next" type="button"
     data-page="${currentPage + 1}" data-cat="${catId}" data-sort="${sort}">
-    Next <i class="fa-solid fa-angle-right"></i></button>` : ''}
+    ${_t('next')} <i class="fa-solid fa-angle-right"></i></button>` : ''}
 </div>`;
     },
 
@@ -356,7 +356,7 @@ const ThreadListView = {
         });
 
         document.getElementById('post-login-btn')?.addEventListener('click', () => {
-            Toast.warning('Please sign in to post a new topic.');
+            Toast.warning(_t('sign_in_to_post'));
             Modal.show('auth-modal');
         });
     },

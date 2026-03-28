@@ -5,15 +5,10 @@ const App = {
         State.init();
 
         // 2. Hydrate the current user.
-        //    In WordPress: AF_DATA.currentUser is injected server-side (always fresh).
-        //    In demo mode:  fall back to whatever State.init() loaded from localStorage.
         if ( typeof AF_DATA !== 'undefined' ) {
             if ( AF_DATA.currentUser ) {
-                // Server already told us who is logged in — use it directly,
-                // no extra AJAX round-trip needed.
                 State.setUser( AF_DATA.currentUser );
             } else {
-                // Not logged in on the server side — clear any stale local state.
                 State.setUser( null );
             }
         }
@@ -32,18 +27,17 @@ const App = {
             App.showAccountUpdateModal();
         }
 
-        // 7. Mark user as online (heartbeat) — fire immediately then every 5 min.
-        //    Guards live here so api.js stays decoupled from CONFIG and State.
+        // 7. Mark user as online (heartbeat).
         if ( ! CONFIG.DEMO_MODE && State.isAuthenticated() ) {
             API.pingActive();
             setInterval( () => { if ( State.isAuthenticated() ) API.pingActive(); }, 5 * 60 * 1000 );
         }
 
-        // 8. First-visit welcome toast (demo / standalone only).
+        // 8. First-visit welcome toast (demo only).
         if ( CONFIG.DEMO_MODE && !localStorage.getItem('esyf_visited') ) {
             localStorage.setItem('esyf_visited', '1');
             setTimeout(() => {
-                Toast.info('Welcome to EsyTuner Forum! Browse or sign in to get started.');
+                Toast.info(_t('join_community_desc'));
             }, 800);
         }
     },
@@ -55,22 +49,22 @@ const App = {
         overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
         overlay.innerHTML = `
 <div style="background:var(--card-bg,#fff);border-radius:12px;padding:2rem;width:440px;max-width:94vw;box-shadow:0 8px 40px rgba(0,0,0,.3);">
-  <h2 style="margin:0 0 .5rem;font-size:1.25rem;"><i class="fa-solid fa-user-pen"></i> Update Your Account</h2>
-  <p style="color:var(--text-muted);margin:0 0 1.5rem;font-size:.9rem;">Please verify your details. This is a one-time step after migration.</p>
+  <h2 style="margin:0 0 .5rem;font-size:1.25rem;"><i class="fa-solid fa-user-pen"></i> ${_t('update_your_account')}</h2>
+  <p style="color:var(--text-muted);margin:0 0 1.5rem;font-size:.9rem;">${_t('update_account_desc')}</p>
   <div class="form-group" style="margin-bottom:1rem">
-    <label class="form-label">Display Name</label>
+    <label class="form-label">${_t('display_name')}</label>
     <input class="form-input" type="text" id="au-display-name" value="${user.displayName || user.username}">
   </div>
   <div class="form-group" style="margin-bottom:1rem">
-    <label class="form-label">Email</label>
+    <label class="form-label">${_t('email')}</label>
     <input class="form-input" type="email" id="au-email" value="${user.email || ''}">
   </div>
   <div class="form-group" style="margin-bottom:1.5rem">
-    <label class="form-label">Location</label>
-    <input class="form-input" type="text" id="au-location" placeholder="e.g. Tbilisi, Georgia" value="${user.location || ''}">
+    <label class="form-label">${_t('location')}</label>
+    <input class="form-input" type="text" id="au-location" placeholder="${_t('location_placeholder')}" value="${user.location || ''}">
   </div>
   <button class="btn btn-primary" type="button" id="au-save-btn" style="width:100%">
-    <i class="fa-solid fa-check"></i> Save & Continue
+    <i class="fa-solid fa-check"></i> ${_t('save_changes')}
   </button>
   <span id="au-msg" style="display:block;margin-top:.5rem;text-align:center;font-size:.85rem;color:var(--text-muted)"></span>
 </div>`;
@@ -80,7 +74,7 @@ const App = {
             const btn = document.getElementById('au-save-btn');
             const msg = document.getElementById('au-msg');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + _t('loading') + '...';
             try {
                 await API.accountUpdated({
                     display_name: document.getElementById('au-display-name').value.trim(),
@@ -88,17 +82,17 @@ const App = {
                     location: document.getElementById('au-location').value.trim(),
                 });
                 overlay.remove();
-                Toast.success('Account updated successfully!');
+                Toast.success(_t('account_updated'));
                 const userData = await API.getUserData();
                 if (userData?.user) {
                     State.setUser(userData.user);
                     Header.render();
                 }
             } catch (err) {
-                msg.textContent = err.message || 'Could not save. Please try again.';
+                msg.textContent = err.message || _t('could_not_save');
                 msg.style.color = 'var(--danger,#e74c3c)';
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Save & Continue';
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> ' + _t('save_changes');
             }
         });
     }

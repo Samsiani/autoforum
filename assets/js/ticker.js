@@ -46,7 +46,7 @@ const Ticker = (() => {
         if (pauseBtn) {
             pauseBtn.setAttribute(
                 'aria-label',
-                paused ? 'Resume ticker' : 'Pause ticker'
+                paused ? _t('resume_ticker') : _t('pause_ticker')
             );
         }
     }

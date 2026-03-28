@@ -82,6 +82,22 @@ const CONFIG = {
     }
 } )();
 
+/**
+ * Translation helper — returns the translated string for a given key.
+ * Supports variable substitution: _t('welcome_back', { username: 'John' })
+ * → replaces {username} with 'John'.
+ */
+function _t( key, vars ) {
+    const i18n = ( typeof AF_DATA !== 'undefined' && AF_DATA.i18n ) ? AF_DATA.i18n : {};
+    let str = i18n[ key ] ?? key;
+    if ( vars ) {
+        Object.entries( vars ).forEach( ( [ k, v ] ) => {
+            str = str.replace( new RegExp( '\\{' + k + '\\}', 'g' ), v );
+        } );
+    }
+    return str;
+}
+
 // CommonJS export (for tooling / tests only).
 if ( typeof module !== 'undefined' && module.exports ) {
     module.exports = CONFIG;

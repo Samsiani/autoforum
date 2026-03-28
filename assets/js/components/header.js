@@ -9,28 +9,28 @@ const Header = {
 <div class="header-inner">
   <a class="logo" href="#" data-view="home">
     <i class="fa-solid fa-gauge-high"></i>
-    <span>EsyTuner <em>Forum</em></span>
+    <span>${_t('site_name').replace(' ', ' <em>') + '</em>'}</span>
   </a>
 
   <nav class="main-nav">
     <a class="nav-link${State.currentView === 'home' ? ' active' : ''}" href="#" data-view="home">
-      <i class="fa-solid fa-house-chimney"></i> Home
+      <i class="fa-solid fa-house-chimney"></i> ${_t('nav_home')}
     </a>
     <a class="nav-link" href="#" data-view="thread-list" data-category="1">
-      <i class="fa-solid fa-screwdriver-wrench"></i> ECU Tuning
+      <i class="fa-solid fa-screwdriver-wrench"></i> ${_t('nav_ecu_tuning')}
     </a>
     <a class="nav-link" href="#" data-view="thread-list" data-category="2">
-      <i class="fa-solid fa-microchip"></i> Software
+      <i class="fa-solid fa-microchip"></i> ${_t('nav_software')}
     </a>
     <a class="nav-link" href="#" data-view="thread-list" data-category="3">
-      <i class="fa-solid fa-circle-question"></i> Support
+      <i class="fa-solid fa-circle-question"></i> ${_t('nav_support')}
     </a>
   </nav>
 
   <div class="header-actions">
     ${user ? `
     <a class="btn btn-primary btn-sm" href="#" data-view="create-topic">
-      <i class="fa-solid fa-plus"></i> New Topic
+      <i class="fa-solid fa-plus"></i> ${_t('new_topic')}
     </a>
     <div class="user-menu" id="user-menu">
       <button class="user-btn" id="user-btn" type="button" aria-expanded="false">
@@ -48,27 +48,27 @@ const Header = {
         </div>
         <div class="udrop-body">
           <a class="udrop-item" href="#" data-view="dashboard">
-            <i class="fa-solid fa-gauge"></i> Dashboard
+            <i class="fa-solid fa-gauge"></i> ${_t('dashboard')}
           </a>
           <a class="udrop-item" href="#" data-view="dashboard">
-            <i class="fa-solid fa-user-pen"></i> Edit Profile
+            <i class="fa-solid fa-user-pen"></i> ${_t('edit_profile')}
           </a>
           <a class="udrop-item" href="#" data-view="dashboard">
-            <i class="fa-solid fa-key"></i> My Licenses
+            <i class="fa-solid fa-key"></i> ${_t('my_licenses')}
           </a>
           <div class="udrop-sep"></div>
           <button class="udrop-item udrop-item--danger" type="button" id="logout-btn">
-            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+            <i class="fa-solid fa-right-from-bracket"></i> ${_t('log_out')}
           </button>
         </div>
       </div>
     </div>
     ` : `
     <button class="btn btn-ghost btn-sm" type="button" id="login-btn">
-      <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      <i class="fa-solid fa-right-to-bracket"></i> ${_t('sign_in')}
     </button>
     <button class="btn btn-primary btn-sm" type="button" id="register-btn">
-      <i class="fa-solid fa-user-plus"></i> Register
+      <i class="fa-solid fa-user-plus"></i> ${_t('register')}
     </button>
     `}
   </div>
@@ -121,7 +121,7 @@ const Header = {
                 // Proceed with client-side cleanup even if server logout fails.
             }
             State.setUser(null);
-            Toast.info('You have been signed out.');
+            Toast.info(_t('signed_out'));
             setTimeout( () => window.location.reload(), 600 );
         });
     }

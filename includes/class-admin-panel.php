@@ -30,6 +30,7 @@ class Admin_Panel {
     private const REPORTS_SLUG     = 'autoforum-reports';
     private const MEMBERS_SLUG     = 'autoforum-members';
     private const ATTACHMENTS_SLUG = 'autoforum-attachments';
+    private const TRANSLATIONS_SLUG = 'autoforum-translations';
     private const OPTION_KEY       = 'af_settings';
     private const NONCE_SETTINGS   = 'af_save_settings';
     private const NONCE_HWID       = 'af_force_hwid_reset';
@@ -165,6 +166,16 @@ class Admin_Panel {
             'manage_options',
             self::SETTINGS_SLUG,
             [ $this, 'page_settings' ]
+        );
+
+        // 9. Translations — editable UI strings.
+        add_submenu_page(
+            self::MENU_SLUG,
+            __( 'Translations', 'autoforum' ),
+            __( 'Translations', 'autoforum' ),
+            'manage_options',
+            self::TRANSLATIONS_SLUG,
+            [ $this, 'page_translations' ]
         );
 
         // WordPress auto-creates a duplicate top-level submenu entry; remove it
@@ -2133,6 +2144,91 @@ class Admin_Panel {
     }
 
     // ── Settings Page ─────────────────────────────────────────────────────────
+
+    // ── Translations Page ───────────────────────────────────────────────────
+
+    public function page_translations(): void {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'You do not have permission to access this page.', 'autoforum' ) );
+        }
+
+        // Handle save.
+        if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['af_translations_nonce'] ) ) {
+            check_admin_referer( 'af_save_translations', 'af_translations_nonce' );
+            $submitted = $_POST['af_tr'] ?? [];
+            Translations::save( is_array( $submitted ) ? $submitted : [] );
+            echo '<div class="notice notice-success"><p>' . esc_html__( 'Translations saved.', 'autoforum' ) . '</p></div>';
+        }
+
+        $groups   = Translations::groups();
+        $defaults = Translations::defaults();
+        $current  = Translations::all();
+        ?>
+        <div class="wrap af-admin-wrap">
+            <h1 class="af-admin-title">
+                <span class="dashicons dashicons-translation"></span>
+                <?php esc_html_e( 'Translations', 'autoforum' ); ?>
+            </h1>
+            <p style="color:#666;margin-bottom:1.5rem">
+                <?php esc_html_e( 'Edit any user-facing string. Leave blank to use the default value. Variables like {username} will be replaced automatically.', 'autoforum' ); ?>
+            </p>
+
+            <form method="post">
+                <?php wp_nonce_field( 'af_save_translations', 'af_translations_nonce' ); ?>
+
+                <?php foreach ( $groups as $group_id => $group ) : ?>
+                    <h2 style="margin-top:2rem;border-bottom:1px solid #ccc;padding-bottom:.5rem">
+                        <?php echo esc_html( $group['label'] ); ?>
+                    </h2>
+                    <table class="form-table">
+                        <?php foreach ( $group['keys'] as $key ) :
+                            $default = $defaults[ $key ] ?? '';
+                            $value   = $current[ $key ] ?? $default;
+                        ?>
+                            <tr>
+                                <th style="width:220px;font-size:.85rem">
+                                    <label for="af_tr_<?php echo esc_attr( $key ); ?>">
+                                        <code style="font-size:.78rem"><?php echo esc_html( $key ); ?></code>
+                                    </label>
+                                </th>
+                                <td>
+                                    <input type="text"
+                                        id="af_tr_<?php echo esc_attr( $key ); ?>"
+                                        name="af_tr[<?php echo esc_attr( $key ); ?>]"
+                                        value="<?php echo esc_attr( $value ); ?>"
+                                        class="large-text"
+                                        placeholder="<?php echo esc_attr( $default ); ?>">
+                                    <?php if ( $value !== $default ) : ?>
+                                        <span style="color:#666;font-size:.8rem">
+                                            Default: <?php echo esc_html( $default ); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                <?php endforeach; ?>
+
+                <p class="submit">
+                    <button type="submit" class="button button-primary">
+                        <?php esc_html_e( 'Save Translations', 'autoforum' ); ?>
+                    </button>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::TRANSLATIONS_SLUG . '&reset=1' ) ); ?>"
+                       class="button"
+                       onclick="return confirm('Reset all translations to defaults?')">
+                        <?php esc_html_e( 'Reset to Defaults', 'autoforum' ); ?>
+                    </a>
+                </p>
+            </form>
+        </div>
+        <?php
+        // Handle reset.
+        if ( isset( $_GET['reset'] ) && '1' === $_GET['reset'] ) {
+            delete_option( 'af_translations' );
+            wp_safe_redirect( admin_url( 'admin.php?page=' . self::TRANSLATIONS_SLUG ) );
+            exit;
+        }
+    }
 
     public function page_settings(): void {
         ?>

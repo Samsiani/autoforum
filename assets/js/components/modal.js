@@ -20,7 +20,6 @@ const Modal = {
         const closeEl = el.querySelector('.af-modal-close');
         if (closeEl) {
             closeEl.addEventListener('click', hideModal, { once: true });
-            // keyboard support for div[role=button]
             closeEl.addEventListener('keydown', e => {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hideModal(); }
             }, { once: true });
@@ -41,7 +40,6 @@ const Modal = {
         const switchTab = (tab) => {
             tabs.forEach(t  => t.classList.toggle('active', t.dataset.tab === tab));
             panes.forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
-            // Slide indicator
             const activeTab = modal.querySelector(`.af-modal-tab[data-tab="${tab}"]`);
             const indicator = modal.querySelector('.af-modal-tab-indicator');
             if (activeTab && indicator) {
@@ -52,13 +50,12 @@ const Modal = {
 
         tabs.forEach(t => {
             t.addEventListener('click', () => switchTab(t.dataset.tab));
-            // keyboard support for div[role=tab]
             t.addEventListener('keydown', e => {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab(t.dataset.tab); }
             });
         });
 
-        // Password visibility toggles (works for both button and div)
+        // Password visibility toggles
         modal.querySelectorAll('.af-eye-btn').forEach(btn => {
             const toggle = () => {
                 const input = btn.closest('.af-input-wrap').querySelector('.af-input');
@@ -87,12 +84,12 @@ const Modal = {
             if (/[0-9]/.test(pw)) score++;
             if (/[^A-Za-z0-9]/.test(pw)) score++;
             const map = [
-                { label: '',         color: '#333'    },
-                { label: 'Weak',     color: '#ef4444' },
-                { label: 'Fair',     color: '#f97316' },
-                { label: 'Good',     color: '#eab308' },
-                { label: 'Strong',   color: '#22c55e' },
-                { label: 'Perfect',  color: '#06b6d4' },
+                { label: '',              color: '#333'    },
+                { label: _t('pw_weak'),   color: '#ef4444' },
+                { label: _t('pw_fair'),   color: '#f97316' },
+                { label: _t('pw_good'),   color: '#eab308' },
+                { label: _t('pw_strong'), color: '#22c55e' },
+                { label: _t('pw_perfect'),color: '#06b6d4' },
             ];
             return { score, ...map[score] };
         };
@@ -122,38 +119,28 @@ const Modal = {
         const submitBtn = form.querySelector('#login-submit');
 
         if (!username || !password) {
-            if (errorEl) errorEl.textContent = 'Username and password are required.';
+            if (errorEl) errorEl.textContent = _t('username_password_required');
             return;
         }
 
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in…';
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + _t('signing_in');
         if (errorEl) errorEl.textContent = '';
 
         try {
             const data = await API.login(username, password, remember);
-            // Persist user to State so the header updates immediately.
-            // Then reload: nonces in the login response are invalid because
-            // wp_set_auth_cookie() writes the new session token to Set-Cookie
-            // headers only — not to $_COOKIE — so wp_create_nonce() inside the
-            // same AJAX request embeds the wrong token. A reload lets PHP
-            // generate all nonces correctly from the live auth cookie.
             State.setUser(data.user);
             this.hide('auth-modal');
-            Toast.success(`Welcome back, ${data.user.username}!`);
+            Toast.success(_t('welcome_back', { username: data.user.username }));
             setTimeout( () => window.location.reload(), 800 );
         } catch (err) {
-            if (errorEl) errorEl.textContent = err.message ?? 'Login failed. Please try again.';
+            if (errorEl) errorEl.textContent = err.message ?? _t('login_failed');
         } finally {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In';
+            submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> ' + _t('sign_in');
         }
     },
 
-    /**
-     * Open the auth modal on a specific tab ('login' or 'register').
-     * Scopes the tab query to #auth-modal so it is unambiguous.
-     */
     showAuthTab(tab) {
         this.show('auth-modal');
         const tabEl = document.querySelector(`#auth-modal .af-modal-tab[data-tab="${tab}"]`);
@@ -168,30 +155,29 @@ const Modal = {
         const submitBtn = form.querySelector('#register-submit');
 
         if (!username || !email || !password) {
-            if (errorEl) errorEl.textContent = 'All fields are required.';
+            if (errorEl) errorEl.textContent = _t('all_fields_required');
             return;
         }
         if (password.length < 8) {
-            if (errorEl) errorEl.textContent = 'Password must be at least 8 characters.';
+            if (errorEl) errorEl.textContent = _t('password_min_8');
             return;
         }
 
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating account…';
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + _t('creating_account');
         if (errorEl) errorEl.textContent = '';
 
         try {
             const data = await API.register(username, email, password);
-            // Same reload pattern as login — see _doLogin comment.
             State.setUser(data.user);
             this.hide('auth-modal');
-            Toast.success(`Account created! Welcome, ${data.user.username}!`);
+            Toast.success(_t('account_created_welcome', { username: data.user.username }));
             setTimeout( () => window.location.reload(), 800 );
         } catch (err) {
-            if (errorEl) errorEl.textContent = err.message ?? 'Registration failed. Please try again.';
+            if (errorEl) errorEl.textContent = err.message ?? _t('registration_failed');
         } finally {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create Account';
+            submitBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> ' + _t('create_account');
         }
     }
 };

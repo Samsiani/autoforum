@@ -1,11 +1,11 @@
 // Dashboard view — user profile, licenses, settings
 const DashboardView = {
     SECTIONS: [
-        { id: 'overview',  icon: 'fa-gauge',             label: 'Overview' },
-        { id: 'licenses',  icon: 'fa-key',               label: 'My Licenses' },
-        { id: 'posts',     icon: 'fa-comment-dots',      label: 'My Posts' },
-        { id: 'settings',  icon: 'fa-gear',              label: 'Settings' },
-        { id: 'security',  icon: 'fa-shield-halved',     label: 'Security' }
+        { id: 'overview',  icon: 'fa-gauge',             label: () => _t('overview') },
+        { id: 'licenses',  icon: 'fa-key',               label: () => _t('my_licenses') },
+        { id: 'posts',     icon: 'fa-comment-dots',      label: () => _t('my_posts') },
+        { id: 'settings',  icon: 'fa-gear',              label: () => _t('profile_settings') },
+        { id: 'security',  icon: 'fa-shield-halved',     label: () => _t('security') }
     ],
 
     activeSection: 'overview',
@@ -20,10 +20,10 @@ const DashboardView = {
   <div class="card" style="max-width:500px;margin:4rem auto;text-align:center">
     <div class="card-body" style="padding:3rem">
       <i class="fa-solid fa-lock" style="font-size:3rem;color:var(--text-dim);margin-bottom:1rem;display:block"></i>
-      <h2 style="margin-bottom:.5rem">Sign In Required</h2>
-      <p style="color:var(--text-muted);margin-bottom:1.5rem">Please sign in to access your dashboard.</p>
+      <h2 style="margin-bottom:.5rem">${_t('sign_in_required')}</h2>
+      <p style="color:var(--text-muted);margin-bottom:1.5rem">${_t('please_sign_in')}</p>
       <button class="btn btn-primary" type="button" id="dash-login-btn">
-        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+        <i class="fa-solid fa-right-to-bracket"></i> ${_t('sign_in')}
       </button>
     </div>
   </div>
@@ -38,9 +38,9 @@ const DashboardView = {
         el.innerHTML = `
 <div class="page-wrap fade-up">
   <nav class="breadcrumbs">
-    <a href="#" data-view="home">Home</a>
+    <a href="#" data-view="home">${_t('home')}</a>
     <span class="sep"><i class="fa-solid fa-angle-right"></i></span>
-    <span>Dashboard</span>
+    <span>${_t('dashboard')}</span>
   </nav>
 
   <!-- Profile Hero -->
@@ -57,19 +57,19 @@ const DashboardView = {
         <div class="profile-stats">
           <div class="pstat-item">
             <span class="pstat-val">${user.postCount || 0}</span>
-            <span class="pstat-lbl">Posts</span>
+            <span class="pstat-lbl">${_t('posts')}</span>
           </div>
           <div class="pstat-item">
             <span class="pstat-val">${user.reputation || 0}</span>
-            <span class="pstat-lbl">Reputation</span>
+            <span class="pstat-lbl">${_t('reputation')}</span>
           </div>
           <div class="pstat-item">
             <span class="pstat-val">${user.joined || '—'}</span>
-            <span class="pstat-lbl">Joined</span>
+            <span class="pstat-lbl">${_t('member_since_label')}</span>
           </div>
           <div class="pstat-item">
             <span class="pstat-val">${user.licenses?.length || 0}</span>
-            <span class="pstat-lbl">Licenses</span>
+            <span class="pstat-lbl">${_t('licenses_label')}</span>
           </div>
         </div>
       </div>
@@ -82,11 +82,11 @@ const DashboardView = {
     <nav class="dash-nav">
       ${this.SECTIONS.map(s => `
       <button class="dash-nav-item${s.id === section ? ' active' : ''}" data-section="${s.id}" type="button">
-        <i class="fa-solid ${s.icon}"></i> ${s.label}
+        <i class="fa-solid ${s.icon}"></i> ${s.label()}
       </button>`).join('')}
       <div class="dash-nav-sep"></div>
       <button class="dash-nav-item dash-nav-item--danger" type="button" id="dash-logout">
-        <i class="fa-solid fa-right-from-bracket"></i> Log Out
+        <i class="fa-solid fa-right-from-bracket"></i> ${_t('log_out')}
       </button>
     </nav>
 
@@ -117,51 +117,51 @@ const DashboardView = {
         const lics  = user.licenses?.length || 0;
         return `
 <div class="dash-section">
-  <h2 class="dash-title"><i class="fa-solid fa-gauge"></i> Overview</h2>
+  <h2 class="dash-title"><i class="fa-solid fa-gauge"></i> ${_t('overview')}</h2>
   <div class="overview-grid">
     <div class="ov-card">
       <i class="fa-solid fa-comment-dots ov-icon blue"></i>
       <div class="ov-val">${posts}</div>
-      <div class="ov-lbl">Total Posts</div>
+      <div class="ov-lbl">${_t('total_posts')}</div>
     </div>
     <div class="ov-card">
       <i class="fa-solid fa-star ov-icon yellow"></i>
       <div class="ov-val">${rep}</div>
-      <div class="ov-lbl">Reputation</div>
+      <div class="ov-lbl">${_t('reputation')}</div>
     </div>
     <div class="ov-card">
       <i class="fa-solid fa-key ov-icon green"></i>
       <div class="ov-val">${lics}</div>
-      <div class="ov-lbl">Active Licenses</div>
+      <div class="ov-lbl">${_t('active_licenses')}</div>
     </div>
   </div>
 
   <div class="card" style="margin-top:1.5rem">
-    <div class="card-header"><span class="card-title">Account Summary</span></div>
+    <div class="card-header"><span class="card-title">${_t('account_summary')}</span></div>
     <div class="card-body">
       <div class="activity-item">
         <div class="act-icon blue"><i class="fa-solid fa-user"></i></div>
         <div class="act-body">
-          <span class="act-text">Member since <strong>${user.joined || '—'}</strong></span>
+          <span class="act-text">${_t('member_since')} <strong>${user.joined || '—'}</strong></span>
         </div>
       </div>
       <div class="activity-item">
         <div class="act-icon blue"><i class="fa-solid fa-comment-dots"></i></div>
         <div class="act-body">
-          <span class="act-text"><strong>${posts}</strong> post${posts === 1 ? '' : 's'} contributed to the forum</span>
+          <span class="act-text">${_t('posts_contributed', { count: posts })}</span>
         </div>
       </div>
       <div class="activity-item">
         <div class="act-icon yellow"><i class="fa-solid fa-star"></i></div>
         <div class="act-body">
-          <span class="act-text"><strong>${rep}</strong> reputation point${rep === 1 ? '' : 's'} earned</span>
+          <span class="act-text">${_t('reputation_earned', { count: rep })}</span>
         </div>
       </div>
       ${lics > 0 ? `
       <div class="activity-item">
         <div class="act-icon green"><i class="fa-solid fa-key"></i></div>
         <div class="act-body">
-          <span class="act-text"><strong>${lics}</strong> active license${lics === 1 ? '' : 's'}</span>
+          <span class="act-text">${_t('active_licenses_count', { count: lics })}</span>
         </div>
       </div>` : ''}
     </div>
@@ -174,39 +174,39 @@ const DashboardView = {
         if (et.connected) {
             return `
 <div class="dash-section">
-  <h2 class="dash-title"><i class="fa-solid fa-key"></i> My Licenses</h2>
+  <h2 class="dash-title"><i class="fa-solid fa-key"></i> ${_t('my_licenses')}</h2>
   <div class="license-card${et.active ? ' active-license' : ''}">
     <div class="lic-header">
       <div class="lic-name">
         <i class="fa-solid fa-certificate"></i>
-        EasyTuner Pro License
+        ${_t('easytuner_pro_license')}
       </div>
-      <span class="badge ${et.active ? 'badge-active' : 'badge-pinned'}" id="et-status-badge">${et.active ? 'Active' : 'Inactive'}</span>
+      <span class="badge ${et.active ? 'badge-active' : 'badge-pinned'}" id="et-status-badge">${et.active ? _t('active') : _t('inactive')}</span>
     </div>
     <div class="lic-body">
       <div class="lic-row">
-        <span class="lic-lbl">Email</span>
+        <span class="lic-lbl">${_t('email')}</span>
         <span class="lic-val">${et.email}</span>
       </div>
       <div class="lic-row">
-        <span class="lic-lbl">User ID</span>
+        <span class="lic-lbl">${_t('user_id')}</span>
         <span class="lic-val mono">${et.userId || 'N/A'}</span>
       </div>
       <div class="lic-row">
-        <span class="lic-lbl">Device</span>
-        <span class="lic-val">${et.deviceActivated ? '<span class="badge badge-active">Activated</span>' : '<span class="badge badge-pinned">Not Activated</span>'}</span>
+        <span class="lic-lbl">${_t('device')}</span>
+        <span class="lic-val">${et.deviceActivated ? '<span class="badge badge-active">' + _t('device_activated') + '</span>' : '<span class="badge badge-pinned">' + _t('device_not_activated') + '</span>'}</span>
       </div>
       ${et.expiresAt ? `<div class="lic-row">
-        <span class="lic-lbl">Expires</span>
+        <span class="lic-lbl">${_t('expires')}</span>
         <span class="lic-val">${new Date(et.expiresAt).toLocaleDateString()}</span>
       </div>` : ''}
     </div>
     <div class="lic-footer">
       <button class="btn btn-secondary btn-sm" type="button" id="et-refresh-btn">
-        <i class="fa-solid fa-arrows-rotate"></i> Refresh Status
+        <i class="fa-solid fa-arrows-rotate"></i> ${_t('refresh_status')}
       </button>
       <button class="btn btn-secondary btn-sm dash-nav-item--danger" type="button" id="et-disconnect-btn">
-        <i class="fa-solid fa-plug-circle-xmark"></i> Disconnect
+        <i class="fa-solid fa-plug-circle-xmark"></i> ${_t('disconnect')}
       </button>
     </div>
   </div>
@@ -214,21 +214,21 @@ const DashboardView = {
         }
         return `
 <div class="dash-section">
-  <h2 class="dash-title"><i class="fa-solid fa-key"></i> My Licenses</h2>
+  <h2 class="dash-title"><i class="fa-solid fa-key"></i> ${_t('my_licenses')}</h2>
   <div class="card">
-    <div class="card-header"><span class="card-title">Connect Your Easy Tuner Account</span></div>
+    <div class="card-header"><span class="card-title">${_t('connect_et_account')}</span></div>
     <div class="card-body">
-      <p style="color:var(--text-muted);margin-bottom:1rem">Link your Easy Tuner account to activate your license on this forum.</p>
+      <p style="color:var(--text-muted);margin-bottom:1rem">${_t('connect_et_desc')}</p>
       <div class="form-group">
-        <label class="form-label">Easy Tuner Email</label>
-        <input class="form-input" type="email" id="et-email" placeholder="your@email.com">
+        <label class="form-label">${_t('et_email')}</label>
+        <input class="form-input" type="email" id="et-email" placeholder="${_t('et_email_placeholder')}">
       </div>
       <div class="form-group">
-        <label class="form-label">Easy Tuner Password</label>
-        <input class="form-input" type="password" id="et-password" placeholder="Your Easy Tuner password">
+        <label class="form-label">${_t('et_password')}</label>
+        <input class="form-input" type="password" id="et-password" placeholder="${_t('et_password_placeholder')}">
       </div>
       <button class="btn btn-primary" type="button" id="et-connect-btn">
-        <i class="fa-solid fa-plug"></i> Connect Account
+        <i class="fa-solid fa-plug"></i> ${_t('connect_account')}
       </button>
       <span id="et-connect-msg" style="margin-left:1rem;color:var(--text-muted)"></span>
     </div>
@@ -245,7 +245,7 @@ const DashboardView = {
             ];
             return `
 <div class="dash-section">
-  <h2 class="dash-title"><i class="fa-solid fa-comment-dots"></i> My Posts</h2>
+  <h2 class="dash-title"><i class="fa-solid fa-comment-dots"></i> ${_t('my_posts')}</h2>
   <div class="card">
     <div class="card-body" style="padding:0">
       ${mockPosts.map(p => `
@@ -253,7 +253,7 @@ const DashboardView = {
         <div class="act-icon blue"><i class="fa-solid fa-comment"></i></div>
         <div class="act-body">
           <a class="act-text" href="#" data-view="thread-view" data-thread="1">${p.title}</a>
-          <span class="act-time">${p.time} · ${p.replies} replies</span>
+          <span class="act-time">${p.time} · ${p.replies} ${_t('replies').toLowerCase()}</span>
         </div>
       </div>`).join('')}
     </div>
@@ -265,18 +265,18 @@ const DashboardView = {
         const postCount = parseInt(user.postCount, 10) || 0;
         return `
 <div class="dash-section">
-  <h2 class="dash-title"><i class="fa-solid fa-comment-dots"></i> My Posts</h2>
+  <h2 class="dash-title"><i class="fa-solid fa-comment-dots"></i> ${_t('my_posts')}</h2>
   <div class="card">
     <div class="card-body" style="text-align:center;padding:2.5rem 1.5rem;color:var(--text-muted)">
       <i class="fa-solid fa-comment-dots" style="font-size:2rem;margin-bottom:.75rem;display:block"></i>
       ${postCount > 0
-        ? `<p>You have made <strong>${postCount.toLocaleString()}</strong> post${postCount === 1 ? '' : 's'} on the forum.</p>
+        ? `<p>${_t('posts_made', { count: postCount.toLocaleString() })}</p>
            <a class="btn btn-ghost btn-sm" href="#" data-view="home" style="margin-top:.75rem">
-             <i class="fa-solid fa-comments"></i> Browse Forum
+             <i class="fa-solid fa-comments"></i> ${_t('browse_forum')}
            </a>`
-        : `<p>You haven\'t posted anything yet.</p>
+        : `<p>${_t('no_posts_yet')}</p>
            <a class="btn btn-primary btn-sm" href="#" data-view="home" style="margin-top:.75rem">
-             <i class="fa-solid fa-plus"></i> Start a Discussion
+             <i class="fa-solid fa-plus"></i> ${_t('start_discussion')}
            </a>`
       }
     </div>
@@ -287,38 +287,38 @@ const DashboardView = {
     _sectionSettings(user) {
         return `
 <div class="dash-section">
-  <h2 class="dash-title"><i class="fa-solid fa-gear"></i> Profile Settings</h2>
+  <h2 class="dash-title"><i class="fa-solid fa-gear"></i> ${_t('profile_settings')}</h2>
   <div class="card">
     <div class="card-body">
       <form class="settings-form" id="settings-form">
         <div class="form-group">
-          <label class="form-label">Username</label>
+          <label class="form-label">${_t('username')}</label>
           <input class="form-input" type="text" value="${user.username}" readonly>
-          <span class="form-hint">Username cannot be changed.</span>
+          <span class="form-hint">${_t('username_no_change')}</span>
         </div>
         <div class="form-group">
-          <label class="form-label">Display Name</label>
+          <label class="form-label">${_t('display_name')}</label>
           <input class="form-input" type="text" name="display_name" value="${user.username}">
         </div>
         <div class="form-group">
-          <label class="form-label">Email Address</label>
+          <label class="form-label">${_t('email_address')}</label>
           <input class="form-input" type="email" name="email" value="${user.email || ''}">
         </div>
         <div class="form-group">
-          <label class="form-label">Location</label>
-          <input class="form-input" type="text" name="location" placeholder="e.g. Germany">
+          <label class="form-label">${_t('location')}</label>
+          <input class="form-input" type="text" name="location" placeholder="${_t('location_placeholder')}">
         </div>
         <div class="form-group">
-          <label class="form-label">About Me</label>
-          <textarea class="form-textarea" name="bio" rows="4" placeholder="Tell the community about yourself…"></textarea>
+          <label class="form-label">${_t('about_me')}</label>
+          <textarea class="form-textarea" name="bio" rows="4" placeholder="${_t('about_me_placeholder')}"></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">Forum Signature</label>
-          <textarea class="form-textarea" name="sig" rows="3" placeholder="Your signature shown below posts…"></textarea>
+          <label class="form-label">${_t('forum_signature')}</label>
+          <textarea class="form-textarea" name="sig" rows="3" placeholder="${_t('signature_placeholder')}"></textarea>
         </div>
         <div style="text-align:right;margin-top:1rem">
           <button class="btn btn-primary" type="submit">
-            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+            <i class="fa-solid fa-floppy-disk"></i> ${_t('save_changes')}
           </button>
         </div>
       </form>
@@ -330,35 +330,35 @@ const DashboardView = {
     _sectionSecurity(user) {
         return `
 <div class="dash-section">
-  <h2 class="dash-title"><i class="fa-solid fa-shield-halved"></i> Security</h2>
+  <h2 class="dash-title"><i class="fa-solid fa-shield-halved"></i> ${_t('security')}</h2>
   <div class="card" style="margin-bottom:1rem">
-    <div class="card-header"><span class="card-title">Change Password</span></div>
+    <div class="card-header"><span class="card-title">${_t('change_password')}</span></div>
     <div class="card-body">
       <div class="form-group">
-        <label class="form-label">Current Password</label>
+        <label class="form-label">${_t('current_password')}</label>
         <input class="form-input" type="password" placeholder="••••••••">
       </div>
       <div class="form-group">
-        <label class="form-label">New Password</label>
-        <input class="form-input" type="password" placeholder="Min. 8 characters">
+        <label class="form-label">${_t('new_password')}</label>
+        <input class="form-input" type="password" placeholder="${_t('min_8_chars')}">
       </div>
       <div class="form-group">
-        <label class="form-label">Confirm New Password</label>
-        <input class="form-input" type="password" placeholder="Repeat new password">
+        <label class="form-label">${_t('confirm_password')}</label>
+        <input class="form-input" type="password" placeholder="${_t('repeat_password')}">
       </div>
       <button class="btn btn-primary" type="button" id="change-pw-btn">
-        <i class="fa-solid fa-lock"></i> Update Password
+        <i class="fa-solid fa-lock"></i> ${_t('update_password')}
       </button>
     </div>
   </div>
   <div class="card">
-    <div class="card-header"><span class="card-title">Active Sessions</span></div>
+    <div class="card-header"><span class="card-title">${_t('active_sessions')}</span></div>
     <div class="card-body">
       <div class="activity-item">
         <div class="act-icon green"><i class="fa-solid fa-desktop"></i></div>
         <div class="act-body">
           <span class="act-text">This device · Chrome / macOS</span>
-          <span class="act-time act-current">Current session</span>
+          <span class="act-time act-current">${_t('current_session')}</span>
         </div>
       </div>
     </div>
@@ -389,13 +389,13 @@ const DashboardView = {
         document.getElementById('dash-logout')?.addEventListener('click', async () => {
             try { await API.logout(); } catch (e) { /* clear local state regardless */ }
             State.setUser(null);
-            Toast.info('You have been signed out.');
+            Toast.info(_t('signed_out'));
             Header.render();
             Router.navigateTo('home');
         });
 
         document.getElementById('change-pw-btn')?.addEventListener('click', () => {
-            Toast.success('Password updated successfully.');
+            Toast.success(_t('password_updated'));
         });
 
         this._bindSectionEvents(this.activeSection, user);
@@ -417,18 +417,18 @@ const DashboardView = {
                     bio:          form.querySelector('[name="bio"]')?.value ?? '',
                     signature:    form.querySelector('[name="sig"]')?.value ?? '',
                 });
-                Toast.success('Profile settings saved!');
+                Toast.success(_t('profile_saved'));
             } catch (err) {
-                Toast.error(err.message ?? 'Could not save settings. Please try again.');
+                Toast.error(err.message ?? _t('could_not_save_settings'));
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Changes';
+                btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> ${_t('save_changes')}`;
             }
         });
 
         // change password
         document.getElementById('change-pw-btn')?.addEventListener('click', () => {
-            Toast.success('Password updated successfully.');
+            Toast.success(_t('password_updated'));
         });
 
         // HWID reset
@@ -441,10 +441,10 @@ const DashboardView = {
                 btn.disabled = true;
                 try {
                     await API.resetHwid(licId, nonce);
-                    Toast.success('HWID reset successfully! New HWID will be assigned on next launch.');
-                    if (warnEl) warnEl.textContent = 'Reset applied — cooldown now active.';
+                    Toast.success(_t('hwid_reset_success'));
+                    if (warnEl) warnEl.textContent = _t('hwid_reset_cooldown');
                 } catch (err) {
-                    Toast.error(err.message ?? 'Could not reset HWID. Please try again.');
+                    Toast.error(err.message ?? _t('could_not_reset_hwid'));
                     if (warnEl) warnEl.textContent = err.message ?? 'Reset failed.';
                 } finally {
                     btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Reset HWID';
@@ -460,15 +460,15 @@ const DashboardView = {
             const email = document.getElementById('et-email')?.value?.trim();
             const pw    = document.getElementById('et-password')?.value;
             if (!email || !pw) {
-                if (msg) msg.textContent = 'Please fill in both fields.';
+                if (msg) msg.textContent = _t('please_fill_both');
                 return;
             }
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting...';
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${_t('connecting')}`;
             if (msg) msg.textContent = '';
             try {
                 const res = await API.etConnect(email, pw);
-                Toast.success(res.message || 'Easy Tuner account connected!');
+                Toast.success(res.message || _t('et_connected'));
                 // Refresh user data and re-render section.
                 const userData = await API.getUserData();
                 if (userData?.user) {
@@ -477,11 +477,11 @@ const DashboardView = {
                     this._bindSectionEvents('licenses', userData.user);
                 }
             } catch (err) {
-                Toast.error(err.message || 'Connection failed.');
-                if (msg) msg.textContent = err.message || 'Connection failed.';
+                Toast.error(err.message || _t('connection_failed'));
+                if (msg) msg.textContent = err.message || _t('connection_failed');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-plug"></i> Connect Account';
+                btn.innerHTML = `<i class="fa-solid fa-plug"></i> ${_t('connect_account')}`;
             }
         });
 
@@ -492,7 +492,7 @@ const DashboardView = {
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Disconnecting...';
             try {
                 await API.etDisconnect();
-                Toast.info('Easy Tuner account disconnected.');
+                Toast.info(_t('et_disconnected'));
                 const userData = await API.getUserData();
                 if (userData?.user) {
                     State.setUser(userData.user);
@@ -500,10 +500,10 @@ const DashboardView = {
                     this._bindSectionEvents('licenses', userData.user);
                 }
             } catch (err) {
-                Toast.error(err.message || 'Could not disconnect.');
+                Toast.error(err.message || _t('could_not_disconnect'));
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-plug-circle-xmark"></i> Disconnect';
+                btn.innerHTML = `<i class="fa-solid fa-plug-circle-xmark"></i> ${_t('disconnect')}`;
             }
         });
 
@@ -511,21 +511,21 @@ const DashboardView = {
         document.getElementById('et-refresh-btn')?.addEventListener('click', async () => {
             const btn = document.getElementById('et-refresh-btn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${_t('checking')}`;
             try {
                 const res = await API.etCheck();
                 const et = res.easyTuner || {};
                 const badge = document.getElementById('et-status-badge');
                 if (badge) {
-                    badge.textContent = et.active ? 'Active' : 'Inactive';
+                    badge.textContent = et.active ? _t('active') : _t('inactive');
                     badge.className = `badge ${et.active ? 'badge-active' : 'badge-pinned'}`;
                 }
-                Toast.success('License status refreshed.');
+                Toast.success(_t('license_refreshed'));
             } catch (err) {
-                Toast.error(err.message || 'Could not check license status.');
+                Toast.error(err.message || _t('could_not_check_license'));
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Refresh Status';
+                btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> ${_t('refresh_status')}`;
             }
         });
 

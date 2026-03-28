@@ -162,10 +162,10 @@ const HomeView = {
             <img src="${u.avatar}" alt="${u.name}" class="top-avatar">
             <div class="top-info">
               <a class="top-name" href="#" data-view="user-profile" data-id="${u.id ?? 0}">${u.name}</a>
-              <span class="top-meta">${this._fmt(u.posts)} posts · ${this._fmt(u.rep)} rep</span>
+              <span class="top-meta">${this._fmt(u.posts)} ${_t('posts').toLowerCase()} · ${this._fmt(u.rep)} ${_t('rep')}</span>
             </div>
           </div>`).join('')
-            : '<p class="sidebar-empty">No data available.</p>';
+            : `<p class="sidebar-empty">${_t('no_data')}</p>`;
 
         // ── Latest Posts sidebar (demo only for now) ───────────────────
         const latestHtml = latest.length
@@ -174,7 +174,7 @@ const HomeView = {
             <a class="latest-title" href="#" data-view="thread-view" data-thread="${p.topicId}">${p.title}</a>
             <span class="latest-meta">by <a href="#" data-view="user-profile" data-id="${p.userId ?? 0}"><strong>${p.user}</strong></a> · ${p.time}</span>
           </div>`).join('')
-            : '<p class="sidebar-empty">No recent posts.</p>';
+            : `<p class="sidebar-empty">${_t('no_recent_posts')}</p>`;
 
         // ── Render ─────────────────────────────────────────────────────
         el.innerHTML = `
@@ -184,10 +184,10 @@ const HomeView = {
     <!-- CATEGORIES -->
     <main>
       <div class="section-head">
-        <h2 class="section-title"><i class="fa-solid fa-layer-group"></i> Forum Categories</h2>
+        <h2 class="section-title"><i class="fa-solid fa-layer-group"></i> ${_t('forum_categories')}</h2>
         ${State.isAuthenticated() ? `
         <a class="btn btn-primary btn-sm" href="#" data-view="create-topic">
-          <i class="fa-solid fa-plus"></i> New Topic
+          <i class="fa-solid fa-plus"></i> ${_t('new_topic')}
         </a>` : ''}
       </div>
 
@@ -205,11 +205,11 @@ const HomeView = {
             <div class="category-counts">
               <div class="count-item">
                 <span class="count-val">${this._fmt(cat.topic_count)}</span>
-                <span class="count-lbl">Threads</span>
+                <span class="count-lbl">${_t('threads')}</span>
               </div>
               <div class="count-item">
                 <span class="count-val">${this._fmt(cat.post_count)}</span>
-                <span class="count-lbl">Posts</span>
+                <span class="count-lbl">${_t('posts')}</span>
               </div>
             </div>
           </div>
@@ -221,26 +221,26 @@ const HomeView = {
     <aside class="sidebar">
 
       <div class="sidebar-card">
-        <div class="sidebar-head"><i class="fa-solid fa-chart-simple"></i> Forum Stats</div>
+        <div class="sidebar-head"><i class="fa-solid fa-chart-simple"></i> ${_t('forum_stats')}</div>
         <div class="sidebar-body">
           <div class="stats-grid">
-            <div class="stat-row"><span class="stat-lbl"><i class="fa-solid fa-users"></i> Members</span>${membersTxt}</div>
-            <div class="stat-row"><span class="stat-lbl"><i class="fa-solid fa-comment-dots"></i> Posts</span><strong>${this._fmt(stats.posts)}</strong></div>
-            <div class="stat-row"><span class="stat-lbl"><i class="fa-solid fa-list-ul"></i> Threads</span><strong>${this._fmt(stats.threads)}</strong></div>
-            <div class="stat-row online"><span class="stat-lbl"><i class="fa-solid fa-circle fa-xs"></i> Online</span>${onlineTxt}</div>
+            <div class="stat-row"><span class="stat-lbl"><i class="fa-solid fa-users"></i> ${_t('members')}</span>${membersTxt}</div>
+            <div class="stat-row"><span class="stat-lbl"><i class="fa-solid fa-comment-dots"></i> ${_t('posts')}</span><strong>${this._fmt(stats.posts)}</strong></div>
+            <div class="stat-row"><span class="stat-lbl"><i class="fa-solid fa-list-ul"></i> ${_t('threads')}</span><strong>${this._fmt(stats.threads)}</strong></div>
+            <div class="stat-row online"><span class="stat-lbl"><i class="fa-solid fa-circle fa-xs"></i> ${_t('online')}</span>${onlineTxt}</div>
           </div>
         </div>
       </div>
 
       <div class="sidebar-card">
-        <div class="sidebar-head"><i class="fa-solid fa-trophy"></i> Top Contributors</div>
+        <div class="sidebar-head"><i class="fa-solid fa-trophy"></i> ${_t('top_contributors')}</div>
         <div class="sidebar-body">
           ${topUsersHtml}
         </div>
       </div>
 
       <div class="sidebar-card">
-        <div class="sidebar-head"><i class="fa-solid fa-clock-rotate-left"></i> Latest Posts</div>
+        <div class="sidebar-head"><i class="fa-solid fa-clock-rotate-left"></i> ${_t('latest_posts')}</div>
         <div class="sidebar-body">
           ${latestHtml}
         </div>
@@ -248,11 +248,11 @@ const HomeView = {
 
       ${!State.isAuthenticated() ? `
       <div class="sidebar-card cta-card">
-        <div class="sidebar-head"><i class="fa-solid fa-bolt"></i> Join the Community</div>
+        <div class="sidebar-head"><i class="fa-solid fa-bolt"></i> ${_t('join_community')}</div>
         <div class="sidebar-body cta-body">
-          <p>Register free to post, share tunes and get support.</p>
+          <p>${_t('join_community_desc')}</p>
           <button class="btn btn-primary" type="button" id="join-btn">
-            <i class="fa-solid fa-user-plus"></i> Create Account
+            <i class="fa-solid fa-user-plus"></i> ${_t('create_account')}
           </button>
         </div>
       </div>` : ''}

@@ -173,13 +173,7 @@ class Assets {
                 // Boolean cast: stored as 0/1 in DB, JS expects true/false.
                 'showDemoData'   => ! empty( $settings['show_demo_data'] ),
             ],
-            'i18n'        => [
-                'loginRequired'   => __( 'Please log in to continue.', 'autoforum' ),
-                'topicCreated'    => __( 'Topic created!', 'autoforum' ),
-                'replyPosted'     => __( 'Reply posted!', 'autoforum' ),
-                'thanked'         => __( 'Thanks added — content unlocked!', 'autoforum' ),
-                'errorGeneric'    => __( 'Something went wrong. Please try again.', 'autoforum' ),
-            ],
+            'i18n'        => Translations::all(),
         ] );
 
         // Inject CSS custom property override for the chosen primary color.
