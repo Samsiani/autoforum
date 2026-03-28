@@ -853,7 +853,7 @@
 /* ════════════════════════════════════
    CREATE TOPIC
 ════════════════════════════════════ */
-.create-topic-wrap { max-width: 900px; }
+.create-topic-wrap { max-width: 100%; }
 
 .prefix-picker {
     display: flex;
